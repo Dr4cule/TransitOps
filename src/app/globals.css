@@ -1,26 +1,110 @@
 @import "tailwindcss";
 
-:root {
-  --background: #ffffff;
-  --foreground: #171717;
-}
+/*
+  TransitOps — Neo-Brutalist × Comic Sans design system
+  Dark cockpit (default) with hot-orange accent, thick black borders,
+  hard offset shadows (zero blur), flat status fills.
+*/
 
 @theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+  /* fonts (wired from next/font in layout.tsx) */
+  --font-comic: var(--font-comic-neue), "Comic Sans MS", "Chalkboard SE", system-ui, sans-serif;
+  --font-mono: var(--font-jetbrains-mono), ui-monospace, "SF Mono", Menlo, monospace;
+
+  /* core surfaces */
+  --color-ink: #0b0b0b;
+  --color-panel: #15161b;
+  --color-panel-2: #1e2029;
+  --color-panel-3: #2a2d38;
+  --color-paper: #faf7f0;
+  --color-fg: #f4f1e9;
+  --color-fg-dim: #9a9ead;
+  --color-line: #0b0b0b;
+
+  /* brand */
+  --color-brand: #e8811a;
+  --color-brand-hi: #f59e0b;
+  --color-brand-ink: #0b0b0b;
+
+  /* status */
+  --color-st-green: #22c55e;
+  --color-st-blue: #3b82f6;
+  --color-st-orange: #f59e0b;
+  --color-st-redpink: #f472b6;
+  --color-st-red: #ef4444;
+  --color-st-grey: #9ca3af;
+
+  /* pop accents (charts / callouts) */
+  --color-pop-blue: #2563eb;
+  --color-pop-lime: #a3e635;
+  --color-pop-violet: #8b5cf6;
+  --color-pop-yellow: #fde047;
+
+  /* brutalist hard shadows (no blur) */
+  --shadow-brutal: 4px 4px 0 #0b0b0b;
+  --shadow-brutal-lg: 6px 6px 0 #0b0b0b;
+  --shadow-brutal-sm: 2px 2px 0 #0b0b0b;
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+:root {
+  --bg: var(--color-panel);
+  --surface: var(--color-panel-2);
+}
+
+html {
+  height: 100%;
 }
 
 body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  min-height: 100%;
+  background: var(--bg);
+  color: var(--color-fg);
+  font-family: var(--font-comic);
+  -webkit-font-smoothing: antialiased;
+}
+
+/* numeric everything reads in mono, tabular */
+.tnum {
+  font-family: var(--font-mono);
+  font-variant-numeric: tabular-nums;
+}
+
+/* uppercase mono label — the connective tissue of the UI */
+.label {
+  font-family: var(--font-mono);
+  font-weight: 700;
+  font-size: 11px;
+  line-height: 14px;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  color: var(--color-fg-dim);
+}
+
+/* thin dark scrollbar to match the cockpit */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: var(--color-panel-3) transparent;
+}
+
+/* the signature "press" — hover lifts, active slams flat into the page */
+.brutal-press {
+  transition: transform 0.08s cubic-bezier(0.2, 0.9, 0.25, 1),
+    box-shadow 0.08s cubic-bezier(0.2, 0.9, 0.25, 1);
+}
+.brutal-press:hover {
+  transform: translate(-1px, -1px);
+  box-shadow: var(--shadow-brutal-lg);
+}
+.brutal-press:active {
+  transform: translate(4px, 4px);
+  box-shadow: 0 0 0 var(--color-ink);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .brutal-press,
+  .brutal-press:hover,
+  .brutal-press:active {
+    transition: none;
+    transform: none;
+  }
 }

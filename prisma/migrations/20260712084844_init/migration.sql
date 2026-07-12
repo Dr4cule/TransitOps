@@ -1,5 +1,5 @@
 -- CreateEnum
-CREATE TYPE "Role" AS ENUM ('FLEET_MANAGER', 'DRIVER', 'SAFETY_OFFICER', 'FINANCIAL_ANALYST');
+CREATE TYPE "Role" AS ENUM ('FLEET_MANAGER', 'DISPATCHER', 'SAFETY_OFFICER', 'FINANCIAL_ANALYST');
 
 -- CreateEnum
 CREATE TYPE "VehicleStatus" AS ENUM ('AVAILABLE', 'ON_TRIP', 'IN_SHOP', 'RETIRED');
@@ -66,6 +66,7 @@ CREATE TABLE "drivers" (
 -- CreateTable
 CREATE TABLE "trips" (
     "id" TEXT NOT NULL,
+    "tripCode" TEXT NOT NULL,
     "source" TEXT NOT NULL,
     "destination" TEXT NOT NULL,
     "vehicleId" TEXT NOT NULL,
@@ -74,7 +75,9 @@ CREATE TABLE "trips" (
     "plannedDistanceKm" DECIMAL(10,2) NOT NULL,
     "actualDistanceKm" DECIMAL(10,2),
     "fuelConsumedL" DECIMAL(10,2),
+    "revenue" DECIMAL(12,2),
     "status" "TripStatus" NOT NULL DEFAULT 'DRAFT',
+    "etaMinutes" INTEGER,
     "dispatchedAt" TIMESTAMP(3),
     "completedAt" TIMESTAMP(3),
     "cancelledAt" TIMESTAMP(3),
@@ -145,6 +148,9 @@ CREATE UNIQUE INDEX "drivers_licenseNumber_key" ON "drivers"("licenseNumber");
 
 -- CreateIndex
 CREATE INDEX "drivers_status_idx" ON "drivers"("status");
+
+-- CreateIndex
+CREATE UNIQUE INDEX "trips_tripCode_key" ON "trips"("tripCode");
 
 -- CreateIndex
 CREATE INDEX "trips_status_idx" ON "trips"("status");
