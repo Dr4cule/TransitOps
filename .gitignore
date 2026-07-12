@@ -32,6 +32,7 @@ yarn-error.log*
 
 # env files (can opt-in for committing if needed)
 .env*
+!.env.example
 
 # vercel
 .vercel
@@ -42,3 +43,14 @@ next-env.d.ts
 
 /src/generated/prisma
 src/generated/
+
+# AI / agent tooling — kept local, never pushed
+AGENTS.md
+CLAUDE.md
+GEMINI.md
+.claude/
+.superpowers/
+.cursor/
+docs/superpowers/
+plans/
+.mcp.json
