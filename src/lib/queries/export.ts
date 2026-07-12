@@ -9,7 +9,7 @@ type Row = Record<string, string | number | null>;
 const DATASET_DOMAIN: Record<string, Domain> = {
   vehicles: "fleet",
   drivers: "drivers",
-  trips: "dashboard",
+  trips: "trips",
   fuel: "expenses",
   expenses: "expenses",
   analytics: "analytics",

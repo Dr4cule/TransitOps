@@ -1,10 +1,19 @@
 "use client";
 
 import { logoutAction } from "@/lib/actions/auth";
-import { ROLE_LABEL } from "@/lib/constants";
+import { ROLE_LABEL, type NavItem } from "@/lib/constants";
+import { MobileNav } from "@/components/shell/mobile-nav";
 import type { Role } from "@/generated/prisma/enums";
 
-export function Topbar({ name, role }: { name: string; role: Role }) {
+export function Topbar({
+  name,
+  role,
+  navItems,
+}: {
+  name: string;
+  role: Role;
+  navItems: NavItem[];
+}) {
   const initials = name
     .split(" ")
     .map((p) => p[0])
@@ -13,7 +22,8 @@ export function Topbar({ name, role }: { name: string; role: Role }) {
     .toUpperCase();
 
   return (
-    <header className="flex h-14 shrink-0 items-center gap-4 border-b-[3px] border-ink bg-panel px-4">
+    <header className="flex h-14 shrink-0 items-center gap-3 border-b-[3px] border-ink bg-panel px-4">
+      <MobileNav items={navItems} />
       <div className="flex-1">
         <input
           type="search"
@@ -22,7 +32,7 @@ export function Topbar({ name, role }: { name: string; role: Role }) {
         />
       </div>
       <div className="flex items-center gap-3">
-        <div className="text-right">
+        <div className="hidden sm:block text-right">
           <div className="text-sm font-bold text-fg leading-tight">{name}</div>
           <div className="label !text-[10px]">{ROLE_LABEL[role]}</div>
         </div>

@@ -14,3 +14,12 @@ export function inr(n: number): string {
 export function num(n: number): string {
   return n.toLocaleString("en-IN");
 }
+
+/** Today at 00:00 local — the single boundary for "licence expired" checks so
+ *  the drivers list, the dispatch picker, and createTrip all agree. A licence
+ *  is valid through the whole of its expiry date. */
+export function startOfToday(): Date {
+  const d = new Date();
+  d.setHours(0, 0, 0, 0);
+  return d;
+}

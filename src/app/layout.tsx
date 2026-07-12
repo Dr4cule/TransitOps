@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { Comic_Neue, JetBrains_Mono } from "next/font/google";
+import { ThemeScript } from "@/components/theme-toggle";
 import "./globals.css";
 
 const comicNeue = Comic_Neue({
@@ -31,6 +32,9 @@ export default function RootLayout({
       lang="en"
       className={`${comicNeue.variable} ${jetbrainsMono.variable} h-full`}
     >
+      <head>
+        <ThemeScript />
+      </head>
       <body className="min-h-full flex flex-col">{children}</body>
     </html>
   );

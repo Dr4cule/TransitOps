@@ -1,4 +1,5 @@
 import { requireAccess } from "@/lib/rbac";
+import { canAccess } from "@/lib/constants";
 import { getDashboardData, etaLabel } from "@/lib/queries/dashboard";
 import { KpiCard } from "@/components/ui/kpi-card";
 import { BrutalCard } from "@/components/ui/brutal-card";
@@ -13,7 +14,8 @@ export default async function DashboardPage({
 }: {
   searchParams: Promise<{ type?: string; status?: string; region?: string }>;
 }) {
-  await requireAccess("dashboard", "view");
+  const { session } = await requireAccess("dashboard", "view");
+  const canExportTrips = canAccess(session.role, "trips") !== null;
   const filters = await searchParams;
   const data = await getDashboardData(filters);
   const { kpis, statusCounts, recentTrips, filterOptions } = data;
@@ -30,7 +32,7 @@ export default async function DashboardPage({
       {/* Header */}
       <div className="flex flex-wrap items-center justify-between gap-4">
         <h1 className="text-3xl font-bold text-fg">Dashboard</h1>
-        <ExportButton dataset="trips" label="Export Trips CSV" />
+        {canExportTrips && <ExportButton dataset="trips" label="Export Trips CSV" />}
       </div>
 
       {/* Filters */}

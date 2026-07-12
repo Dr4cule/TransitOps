@@ -24,7 +24,7 @@ export function BrutalTable({
               <th
                 key={i}
                 className={cn(
-                  "label !text-fg px-4 py-3 whitespace-nowrap",
+                  "label !text-[#f4f1e9] px-4 py-3 whitespace-nowrap",
                   h.align === "right" && "text-right",
                   h.align === "center" && "text-center",
                 )}

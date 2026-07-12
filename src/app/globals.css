@@ -4,14 +4,16 @@
   TransitOps — Neo-Brutalist × Comic Sans design system
   Dark cockpit (default) with hot-orange accent, thick black borders,
   hard offset shadows (zero blur), flat status fills.
+  Colours are var-referenced (`@theme`, not inline) so the .light variant
+  can re-theme every utility by overriding the token.
 */
 
-@theme inline {
+@theme {
   /* fonts (wired from next/font in layout.tsx) */
   --font-comic: var(--font-comic-neue), "Comic Sans MS", "Chalkboard SE", system-ui, sans-serif;
   --font-mono: var(--font-jetbrains-mono), ui-monospace, "SF Mono", Menlo, monospace;
 
-  /* core surfaces */
+  /* core surfaces (dark cockpit defaults) */
   --color-ink: #0b0b0b;
   --color-panel: #15161b;
   --color-panel-2: #1e2029;
@@ -48,11 +50,21 @@
 
 :root {
   --bg: var(--color-panel);
-  --surface: var(--color-panel-2);
 }
 
 html {
   height: 100%;
+}
+
+/* Light neo-brutalist variant (paper + ink). ink/brand/status stay the same;
+   only surfaces + text flip. Toggled via `class="light"` on <html>. */
+html.light {
+  --bg: var(--color-paper);
+  --color-panel: #faf7f0;
+  --color-panel-2: #ffffff;
+  --color-panel-3: #efe9dd;
+  --color-fg: #0b0b0b;
+  --color-fg-dim: #6b6b6b;
 }
 
 body {
@@ -80,7 +92,7 @@ body {
   color: var(--color-fg-dim);
 }
 
-/* thin dark scrollbar to match the cockpit */
+/* thin scrollbar */
 * {
   scrollbar-width: thin;
   scrollbar-color: var(--color-panel-3) transparent;
