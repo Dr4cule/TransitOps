@@ -6,7 +6,7 @@
 
 **A centralized platform to manage the full lifecycle of transport operations — vehicles, drivers, dispatch, maintenance, fuel & expenses — with enforced business rules and live operational insight.**
 
-`Next.js 15` · `TypeScript` · `Tailwind v4` · `Prisma + Neon Postgres` · `Auth.js` · `Recharts`
+`Next.js 15` · `TypeScript` · `Tailwind v4` · `Prisma + PostgreSQL (local)` · `Auth.js` · `Recharts`
 
 </div>
 
@@ -60,17 +60,17 @@
 | Component base | **shadcn/ui** (copy-in, re-skinned brutalist) | Own the code, override styling freely — no fighting a design system |
 | Fonts | **Comic Neue** via `next/font` + `'Comic Sans MS'` fallback | The aesthetic mandate, self-hosted with zero layout shift |
 | Animation | **Framer Motion** (`motion`) | Chunky hover/press micro-interactions without hand-rolling springs |
-| ORM | **Prisma** (+ `@prisma/adapter-neon`) | Best-in-class migrations & Studio; `schema.prisma` is the single readable source of truth |
-| Database | **Neon Postgres** (serverless) | Real Postgres, branchable, zero-ops, first-class on Vercel |
+| ORM | **Prisma** | Best-in-class migrations & Studio; `schema.prisma` is the single readable source of truth over local Postgres |
+| Database | **PostgreSQL 16** (local) | Runs on the dev machine — native install or Docker; no cloud account, works fully offline |
 | Auth | **Auth.js (NextAuth v5)** — Credentials + JWT | Role-in-token + middleware guards map 1:1 to the 4-role RBAC matrix |
 | Validation | **Zod** (shared client + server) | One schema drives forms, Server Actions, and DB writes |
 | Server state | **RSC + Server Actions** (TanStack Query only if SPA) | Mutations that enforce rules live server-side by default |
 | Charts | **Recharts** | Composable SVG bars/KPIs, easy to restyle brutalist |
 | Tables | **TanStack Table** | Headless sort/filter/search for the 6 data grids |
 | CSV / PDF | **PapaParse** / **@react-pdf/renderer** | Mandatory CSV cheap; optional PDF as a declarative bonus |
-| Email | **Resend** + **Vercel Cron** | Daily license-expiry reminders in a few lines |
+| Email (bonus) | **Resend** (or Nodemailer + Mailpit) + **node-cron** | Daily license-expiry reminders from a local in-process scheduler |
 | Forms | **React Hook Form** + `zodResolver` | Fast, uncontrolled inputs wired to the shared Zod schemas |
-| Deployment | **Vercel** + Neon | Push-to-deploy, cron & env built in |
+| Runtime | **Local Node + Docker Postgres** | `pnpm dev` (or `next build && next start`) against a local DB; optional Dockerfile for a self-contained run |
 | Tooling | **pnpm**, **Biome**, **Prisma Migrate + Studio**, seed script | One fast toolchain, versioned migrations, demo-ready data |
 
 ### Framework
@@ -91,11 +91,11 @@
 
 ### Data Layer / ORM
 
-**Prisma** — recommended. `schema.prisma` is the single, highly readable source of truth, and **Prisma Migrate** gives versioned, reviewable migrations (`migrate dev` in development, `migrate deploy` in prod) plus drift detection and **Prisma Studio** for eyeballing seed data — the safest, friendliest schema-evolution loop for a team. On Vercel + Neon, pair it with the **`@prisma/adapter-neon`** driver adapter to keep serverless cold starts low. The one caveat for this app: Prisma has no first-class `SELECT … FOR UPDATE`, so the dispatch/complete row locks are taken with a one-line `$queryRaw` inside the interactive transaction (see §5). **Drizzle ORM** is the tradeoff pick — native `.for('update')` row locking and a lighter client, at the cost of Prisma's migration ergonomics and Studio.
+**Prisma** — recommended. `schema.prisma` is the single, highly readable source of truth, and **Prisma Migrate** gives versioned, reviewable migrations (`migrate dev` in development, `migrate deploy` for a production build) plus drift detection and **Prisma Studio** for eyeballing seed data — the safest, friendliest schema-evolution loop for a team. Against a **local PostgreSQL** it connects directly over TCP with a standard `DATABASE_URL` — no driver adapter, no serverless shim, works fully offline. The one caveat for this app: Prisma has no first-class `SELECT … FOR UPDATE`, so the dispatch/complete row locks are taken with a one-line `$queryRaw` inside the interactive transaction (see §5). **Drizzle ORM** is the tradeoff pick — native `.for('update')` row locking and a lighter client, at the cost of Prisma's migration ergonomics and Studio.
 
 ### Database
 
-**Neon Postgres (serverless)** — one real Postgres you can branch per experiment, with connection pooling that suits Vercel's serverless functions and near-zero setup. (Supabase is comparable but its auth/storage extras are wasted here since we own auth.) Fallback for a fully offline/zero-setup start: **SQLite**, which Prisma supports with a one-line `datasource` provider swap.
+**Local PostgreSQL 16** — one real Postgres running on the dev machine, installed natively (`brew`/`apt`/Postgres.app) or, cleanest, via a one-line **Docker** container. No cloud account, no network dependency, no cold starts — the demo runs entirely offline, which is exactly what a hackathon booth wants. A `docker-compose.yml` with a single `postgres:16` service + a named volume gives every teammate an identical DB in seconds. Fallback for a zero-install start: **SQLite**, which Prisma supports with a one-line `datasource` provider swap (note: SQLite has no native enums or `FOR UPDATE`, so keep Postgres for the real build).
 
 ### Auth
 
@@ -123,15 +123,15 @@
 
 ### Email Reminders (Bonus)
 
-**Resend** for transactional email plus a **Vercel Cron** job hitting a route handler daily that queries drivers whose `license_expiry_date` is within N days and emails the Safety Officer — a small, high-visibility bonus.
+**Resend** (or **Nodemailer** pointed at a local **Mailpit**/MailHog SMTP catcher for a fully-offline demo) for transactional email, plus a **`node-cron`** in-process scheduler that runs a daily job querying drivers whose `license_expiry_date` is within N days and emails the Safety Officer — a small, high-visibility bonus that needs no cloud scheduler.
 
 ### Forms
 
 **React Hook Form** with `@hookform/resolvers/zod`, reusing the same Zod schemas as the server. Uncontrolled inputs keep the dispatch/maintenance/fuel forms fast, and the resolver surfaces the live validation box (e.g. capacity-exceeded → Dispatch disabled) instantly.
 
-### Deployment
+### Runtime & Local Setup
 
-**Vercel** (recommended) with **Neon** — git push deploys, environment variables, and Cron all in one place. Ship a **Dockerfile** as the portable escape hatch if the demo must run self-hosted or offline.
+This build runs **entirely on the local machine** — no cloud. PostgreSQL 16 comes up via a one-service **`docker-compose.yml`** (or a native install), the app runs with `pnpm dev` in development and `pnpm build && pnpm start` for a production-mode local demo, and the license-reminder job runs in-process via `node-cron`. Ship an optional **Dockerfile** (app + `docker-compose` for app *and* db) if you want a one-command, fully self-contained bring-up on any machine. Nothing here depends on an internet connection except the optional Resend email bonus (swap in Nodemailer + Mailpit to stay offline).
 
 ### Dev Tooling
 
@@ -143,7 +143,7 @@
 
 ### Strategy
 
-TransitOps runs on **PostgreSQL 16** with **Prisma** as the single source of truth for schema and migrations. The `schema.prisma` file describes every model, and **Prisma Migrate** turns edits into versioned, reviewable SQL migrations (with drift detection and a clean history in `_prisma_migrations`). We model every categorical field (statuses, roles, license categories) as **native Postgres enums** (Prisma `enum` blocks) rather than free-text or lookup tables: enums are cheap, self-documenting, and push value validation into the database so an invalid `trip_status` can never be persisted. For a time-boxed hackathon this beats a normalized `roles`/`permissions` schema — see the ERD note below. On Vercel + Neon we register the **`@prisma/adapter-neon`** driver adapter so the client talks to Neon over its serverless driver with minimal cold-start cost.
+TransitOps runs on a **local PostgreSQL 16** with **Prisma** as the single source of truth for schema and migrations. The `schema.prisma` file describes every model, and **Prisma Migrate** turns edits into versioned, reviewable SQL migrations (with drift detection and a clean history in `_prisma_migrations`). We model every categorical field (statuses, roles, license categories) as **native Postgres enums** (Prisma `enum` blocks) rather than free-text or lookup tables: enums are cheap, self-documenting, and push value validation into the database so an invalid `trip_status` can never be persisted. For a time-boxed hackathon this beats a normalized `roles`/`permissions` schema — see the ERD note below. The Prisma client connects to Postgres over a standard `DATABASE_URL` (TCP) using its default Postgres connector — no serverless adapter needed since we're not on the edge.
 
 We adopt a **soft-delete stance for business entities** (`vehicles`, `drivers`, `trips`) via a nullable `deleted_at timestamptz`, because operational history (a retired vehicle's past trips, a suspended driver's record) must survive for analytics and audit. **Log-style tables** (`fuel_logs`, `maintenance_logs`, `expenses`) are effectively append-only and use **hard-delete** only for correcting entry mistakes. Every table carries `created_at timestamptz not null default now()` and `updated_at timestamptz not null default now()` (bumped by the app on write), all stored in UTC.
 
@@ -373,13 +373,12 @@ Prisma's schema is compact enough to show the full model set. Enums map to nativ
 
 ```prisma
 generator client {
-  provider        = "prisma-client-js"
-  previewFeatures = ["driverAdapters"]   // enables @prisma/adapter-neon
+  provider = "prisma-client-js"
 }
 
 datasource db {
   provider = "postgresql"
-  url      = env("DATABASE_URL")
+  url      = env("DATABASE_URL")   // e.g. postgresql://postgres:postgres@localhost:5432/transitops
 }
 
 // ─── Enums (native Postgres enums) ───────────────────────────────
@@ -1467,19 +1466,15 @@ Automated compliance nudge for the Safety Officer.
     AND license_expiry_date <= current_date + INTERVAL '30 days'
   ORDER BY license_expiry_date;
   ```
-- **Delivery:** **Resend** (`resend.emails.send(...)`) sends a digest to Safety Officer(s) listing each driver + days remaining.
-- **Trigger:** **Vercel Cron** hitting a protected route handler (`app/api/cron/license-reminders/route.ts`), authenticated via `CRON_SECRET`.
-- **Schedule:** **daily**, early morning — `vercel.json`:
-  ```json
-  { "crons": [{ "path": "/api/cron/license-reminders", "schedule": "7 6 * * *" }] }
-  ```
-  (06:07 UTC daily; off the top-of-hour to avoid platform contention.)
+- **Delivery:** **Resend** (`resend.emails.send(...)`) sends a digest to Safety Officer(s) listing each driver + days remaining. For a fully-offline demo, swap in **Nodemailer** pointed at a local **Mailpit** SMTP catcher (view the sent mail in Mailpit's web UI — great for showing judges without real email).
+- **Trigger:** a **`node-cron`** schedule registered once when the server process boots (e.g. in `lib/scheduler.ts`), calling the reminder function directly — no HTTP endpoint or secret needed. A manual `pnpm tsx scripts/license-reminders.ts` is kept for on-demand runs / demo.
+- **Schedule:** **daily**, early morning — `node-cron` expression `'7 6 * * *'` (06:07 local; off the top-of-hour). Guard it so it registers a single instance in dev (Next.js can double-invoke on hot reload).
 
 ---
 
 ### Other Bonus Features & Where They Slot In
 
-- **Vehicle Document Management** — file upload (registration papers, insurance, fitness certificate) on the Vehicle Registry detail view. Uploads go to object storage via **uploadthing** (or S3-compatible bucket); metadata persisted in a new `vehicle_documents` table (`id`, `vehicle_id` FK, `doc_type`, `file_url`, `uploaded_by`, `expiry_date?`, `created_at`). Expiring-document reminders can reuse the same Resend + Vercel Cron pipeline as license reminders.
+- **Vehicle Document Management** — file upload (registration papers, insurance, fitness certificate) on the Vehicle Registry detail view. Uploads are written to a **local `/uploads` directory** (served through a Next.js route handler) — no cloud bucket needed; metadata persisted in a new `vehicle_documents` table (`id`, `vehicle_id` FK, `doc_type`, `file_url`, `uploaded_by`, `expiry_date?`, `created_at`). Expiring-document reminders can reuse the same Resend/Nodemailer + `node-cron` pipeline as license reminders.
 
 - **Global Search / Filter / Sort** — the top-bar search plus per-screen filter chips are backed by **TanStack Table** (`@tanstack/react-table`) for column sorting, multi-column filtering, and pagination on Vehicles, Drivers, Trips, Fuel & Expenses tables. Column filters map directly to the wireframe filters (Type/Status/Region/reg-no). Server-side variants push `where`/`orderBy` into Prisma queries for large datasets.
 
@@ -1495,20 +1490,20 @@ Automated compliance nudge for the Safety Officer.
 
 | Time Block | Goal | Deliverable |
 |---|---|---|
-| **H0–H1** | Scaffold & foundations | `create-next-app` (App Router, TS), Tailwind **v4** neo-brutalist theme tokens (thick borders, hard offset shadows, orange accent, Comic-style font), **Prisma schema (`schema.prisma`) + Neon connection via `@prisma/adapter-neon`**, Auth.js credentials provider stubbed, `prisma/seed.ts` with **6 vehicles / 5 drivers / 4 trips / 4 role users**. `prisma migrate dev` green, dev server boots. |
+| **H0–H1** | Scaffold & foundations | `create-next-app` (App Router, TS), Tailwind **v4** neo-brutalist theme tokens (thick borders, hard offset shadows, orange accent, Comic-style font), **local Postgres up via `docker-compose up -d`**, **Prisma schema (`schema.prisma`) + `prisma migrate dev`**, Auth.js credentials provider stubbed, `prisma/seed.ts` with **6 vehicles / 5 drivers / 4 trips / 4 role users**. Migration applied, dev server boots. |
 | **H1–H2** | Auth + RBAC + shell | Working login (email/password/role), session cookie, `middleware.ts` route guards, RBAC matrix helper (`can(role, resource, action)`). App shell: dark sidebar (Dashboard/Fleet/Drivers/Trips/Maintenance/Fuel & Exp/Analytics/Settings), top bar with search + user chip. Nav items hidden per role. |
 | **H2–H3** | Asset CRUD | Vehicle Registry: table + `+ Add Vehicle` modal, unique reg-no validation, status pills. Drivers & Safety: table + `+ Add Driver`, license-expiry orange highlight, safety/status pills, status toggle. Both wired to server actions. |
 | **H3–H4** | 🏆 Trip Dispatcher | Create Trip form with **available-only** vehicle & driver pickers (filters out Retired/In Shop/On Trip/Suspended/expired-license), live capacity validation box (over-capacity → Dispatch disabled), single **dispatch transaction** flipping trip→Dispatched + vehicle & driver→On Trip (+ snapshot start_odometer). Live Board of trip cards. |
 | **H4–H5** | Status engine + Maintenance | Complete/Cancel transitions (restore Available), all pill transitions centralized in `lib/transitions.ts`. Maintenance screen: Log Service form, active record → vehicle **In Shop**, close → back to Available (unless Retired). Service Log table. |
 | **H5–H6** | Fuel & Expenses | Fuel Logs table + `+ Log Fuel`, Expenses table + `+ Add Expense` (toll/other/maint-linked), auto **Total Operational Cost = Fuel + Maintenance** (orange highlight). Trip-complete flow captures final odometer + fuel + expenses. |
 | **H6–H7** | Insight layer | Dashboard: 7 KPI cards (colored top borders), Recent Trips table, Vehicle Status bar chart. Analytics: 4 KPI cards (Fuel Eff, Utilization, Op Cost, ROI + formula), Monthly Revenue bars, Top Costliest Vehicles bars. **CSV export** button. |
-| **H7–H8** | Polish & deploy | Responsive pass (sidebar → drawer on mobile), status-pill color audit, empty/error states, **seed-demo dry run of the full judge script**, deploy to Vercel + Neon, smoke test on the live URL. |
+| **H7–H8** | Polish & final run | Responsive pass (sidebar → drawer on mobile), status-pill color audit, empty/error states, **seed-demo dry run of the full judge script**, `pnpm build && pnpm start` production-mode smoke test against the local DB. |
 
 ---
 
 ### Definition of Done
 
-The build is done when all **8 mandatory deliverables** are true on the deployed URL:
+The build is done when all **8 mandatory deliverables** are true on a fresh local run (`docker-compose up -d && pnpm prisma migrate dev && pnpm prisma db seed && pnpm dev`):
 
 - [ ] **Responsive UI** — sidebar collapses to a drawer, tables scroll, no horizontal overflow on mobile; neo-brutalist theme intact at every breakpoint.
 - [ ] **Auth + RBAC** — login works for all 4 roles; middleware blocks unauthorized routes; sidebar and actions respect the RBAC matrix (Fleet/Drivers/Trips/Fuel/Analytics × ✓/view/–).
@@ -1562,10 +1557,10 @@ The build is done when all **8 mandatory deliverables** are true on the deployed
 | **RBAC gaps** (unauthorized user reaches a route via direct URL) | High | Enforce in `middleware.ts` (route-level) **and** re-check inside every server action (`requireRole()`), not just by hiding nav. |
 | **Available-only picker leaks** an ineligible vehicle/driver | Medium | Single `getAvailableVehicles()` / `getAvailableDrivers()` query used everywhere; filter in SQL, not the client. |
 | **Charts eat the clock** | Medium | Time-box to 30 min. Fallback: swap chart lib for CSS flex **bars from divs** (thick-bordered, on-brand) — no dependency, faster, and looks intentionally brutalist. |
-| **Neon connection / migration flakiness** | Medium | Use the pooled connection string + `@prisma/adapter-neon`; for fast schema iteration use `prisma db push` and switch to `prisma migrate dev` once the schema settles; keep seed idempotent. |
+| **Local Postgres / env setup friction** | Medium | Ship `docker-compose.yml` (single `postgres:16` service) so the whole team gets an identical DB with `docker compose up -d`; commit `.env.example` with the local `DATABASE_URL`; use `prisma db push` for fast schema churn, `prisma migrate dev` once it settles; keep seed idempotent. |
 | **Prisma has no native `FOR UPDATE`** | Medium | Take the row lock with a single `$queryRaw` at the top of each interactive `$transaction`; keep those raw locks confined to `lib/transitions.ts` so the rest of the app stays fully typed. |
 | **Comic-Sans-style font readability / vibe risk** | Low | Use a clean comic-style webfont (Comic Neue) for headings/labels, keep tabular data in a legible mono; thick borders carry the brutalism. |
-| **Time overrun → nothing deployed** | Med-High | Deploy a hello-world to Vercel at **H1** so the pipeline is proven; redeploy continuously. |
+| **Time overrun → nothing runnable** | Med-High | Get the full stack booting on **localhost by H1** (DB up + migrate + seed + login working), then re-run the boot sequence after every green milestone so it's always demoable. |
 | **Seed data doesn't match demo script** | Medium | Seed VAN-05 (500kg) and driver Alex explicitly so the judge path works from a clean DB. |
 
 ---
@@ -1609,7 +1604,7 @@ transitops/
 │  │  ├─ api/
 │  │  │  ├─ auth/[...nextauth]/route.ts
 │  │  │  ├─ export/[dataset]/route.ts   # streaming CSV export (parameterized)
-│  │  │  └─ cron/license-reminders/route.ts
+│  │  │  └─ uploads/[...path]/route.ts  # serve local vehicle-document files
 │  │  ├─ layout.tsx                  # fonts (comic + mono), theme tokens
 │  │  └─ globals.css                 # Tailwind v4 @theme: borders, hard shadows
 │  ├─ components/
@@ -1625,20 +1620,23 @@ transitops/
 │  │  └─ kpi-card.tsx
 │  ├─ lib/
 │  │  ├─ auth.ts                     # Auth.js config, credentials provider
-│  │  ├─ db.ts                       # PrismaClient singleton + @prisma/adapter-neon
+│  │  ├─ db.ts                       # PrismaClient singleton (dev hot-reload guard)
 │  │  ├─ rbac.ts                     # matrix + requireRole()/can()
 │  │  ├─ transitions.ts              # dispatch/complete/cancel/maint ($transaction + FOR UPDATE)
 │  │  ├─ queries.ts                  # getAvailableVehicles/Drivers, KPIs
 │  │  ├─ actions/                    # vehicles.ts drivers.ts trips.ts …
 │  │  ├─ analytics.ts                # fuel eff, utilization, op cost, ROI
+│  │  ├─ scheduler.ts                # node-cron: daily license reminders
 │  │  └─ constants.ts                # statuses, pill color map
 │  └─ middleware.ts                  # session + route-level RBAC guard
 ├─ prisma/
 │  ├─ schema.prisma                  # models + enums (roles = UserRole enum, not a table)
 │  ├─ migrations/                    # versioned SQL (+ hand-added CHECK & partial indexes)
 │  └─ seed.ts                        # 4 role users, VAN-05, Alex, demo data
-├─ vercel.json                       # cron: daily license reminders
-├─ .env.local                        # DATABASE_URL, AUTH_SECRET, RESEND_API_KEY
+├─ uploads/                          # local vehicle-document storage (gitignored)
+├─ docker-compose.yml                # single postgres:16 service + named volume
+├─ .env.example                      # DATABASE_URL, AUTH_SECRET, RESEND_API_KEY (committed)
+├─ .env                              # local secrets (gitignored)
 └─ package.json                      # prisma.seed → "tsx prisma/seed.ts"
 ```
 
@@ -1655,10 +1653,15 @@ cd transitops
 # Tailwind v4 (installed by create-next-app; ensure v4 + PostCSS plugin)
 pnpm add tailwindcss@latest @tailwindcss/postcss
 
-# Data layer — Prisma + Neon (serverless driver adapter)
-pnpm add @prisma/client @prisma/adapter-neon @neondatabase/serverless
+# Start a local Postgres (Docker) — or use a native install / Postgres.app
+# docker-compose.yml: one `postgres:16` service, POSTGRES_DB=transitops, port 5432
+docker compose up -d
+
+# Data layer — Prisma + local Postgres (no adapter needed)
+pnpm add @prisma/client
 pnpm add -D prisma tsx
 pnpm prisma init --datasource-provider postgresql   # scaffolds prisma/schema.prisma + .env
+# set DATABASE_URL="postgresql://postgres:postgres@localhost:5432/transitops" in .env
 
 # Auth — Auth.js (NextAuth v5) credentials
 pnpm add next-auth@beta bcrypt-ts zod
@@ -1666,6 +1669,9 @@ pnpm add next-auth@beta bcrypt-ts zod
 # Forms, tables, charts, export
 pnpm add react-hook-form @hookform/resolvers @tanstack/react-table recharts papaparse
 pnpm add motion
+
+# Bonus: local scheduler + offline email (optional)
+pnpm add node-cron nodemailer        # + resend if you want real email
 
 # Fonts (comic-style + mono for tabular data)
 pnpm add @fontsource/comic-neue @fontsource/jetbrains-mono
@@ -1678,7 +1684,26 @@ pnpm prisma db seed                      # runs prisma/seed.ts (configured under
 pnpm dev
 ```
 
-> **Deploy early (H1):** `vercel --prod` once to prove the pipeline, add `DATABASE_URL` + `AUTH_SECRET` to Vercel env, then redeploy after every green milestone.
+> **Runnable early (H1):** get `docker compose up -d` → `prisma migrate dev` → `prisma db seed` → login working on **localhost** by the end of hour 1, then re-run that boot sequence after every green milestone so the demo is always live. For a production-mode check: `pnpm build && pnpm start`.
+
+**`docker-compose.yml`** (the entire database dependency):
+
+```yaml
+services:
+  db:
+    image: postgres:16
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: transitops
+    ports:
+      - "5432:5432"
+    volumes:
+      - transitops_pgdata:/var/lib/postgresql/data
+
+volumes:
+  transitops_pgdata:
+```
 
 ---
 
