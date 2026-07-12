@@ -7,8 +7,8 @@ export type VehicleFilters = {
   search?: string;
 };
 
-export function listVehicles(f: VehicleFilters = {}) {
-  const where: Record<string, unknown> = {};
+export function listVehicles(companyId: string, f: VehicleFilters = {}) {
+  const where: Record<string, unknown> = { companyId };
   if (f.type && f.type !== "all") where.type = f.type;
   if (f.status && f.status !== "all") where.status = f.status as VehicleStatus;
   if (f.search) {
@@ -20,20 +20,20 @@ export function listVehicles(f: VehicleFilters = {}) {
   return prisma.vehicle.findMany({ where, orderBy: { createdAt: "desc" } });
 }
 
-export function getVehicle(id: string) {
-  return prisma.vehicle.findUnique({ where: { id } });
+export function getVehicle(companyId: string, id: string) {
+  return prisma.vehicle.findFirst({ where: { companyId, id } });
 }
 
-export function findByRegistration(registrationNumber: string) {
-  return prisma.vehicle.findUnique({ where: { registrationNumber } });
+export function findByRegistration(companyId: string, registrationNumber: string) {
+  return prisma.vehicle.findFirst({ where: { companyId, registrationNumber } });
 }
 
 /** Distinct regions for the filter dropdown. */
-export async function vehicleRegions(): Promise<string[]> {
+export async function vehicleRegions(companyId: string): Promise<string[]> {
   const rows = await prisma.vehicle.findMany({
     distinct: ["region"],
     select: { region: true },
-    where: { region: { not: null } },
+    where: { companyId, region: { not: null } },
   });
   return rows.map((r) => r.region).filter((r): r is string => Boolean(r)).sort();
 }

@@ -22,7 +22,7 @@ export async function createTripAction(
   formData: FormData,
 ): Promise<ActionState> {
   try {
-    await assertRole(["DRIVER"]);
+    const { companyId } = await assertRole(["DRIVER"]);
     const parsed = createTripSchema.safeParse({
       source: formData.get("source"),
       destination: formData.get("destination"),
@@ -32,7 +32,7 @@ export async function createTripAction(
       plannedDistanceKm: formData.get("plannedDistanceKm"),
     });
     if (!parsed.success) return fail("Please fix the highlighted fields.", fieldErrors(parsed.error.issues));
-    await createTrip(parsed.data);
+    await createTrip(companyId, parsed.data);
     revalidatePath("/trips");
     return OK;
   } catch (e) {
@@ -42,8 +42,8 @@ export async function createTripAction(
 
 export async function dispatchTripAction(id: string): Promise<ActionState> {
   try {
-    await assertRole(["DRIVER"]);
-    await dispatchTrip(id);
+    const { companyId } = await assertRole(["DRIVER"]);
+    await dispatchTrip(companyId, id);
     revalidatePath("/trips");
     return OK;
   } catch (e) {
@@ -53,8 +53,8 @@ export async function dispatchTripAction(id: string): Promise<ActionState> {
 
 export async function cancelTripAction(id: string): Promise<ActionState> {
   try {
-    await assertRole(["DRIVER"]);
-    await cancelTrip(id);
+    const { companyId } = await assertRole(["DRIVER"]);
+    await cancelTrip(companyId, id);
     revalidatePath("/trips");
     return OK;
   } catch (e) {
@@ -68,14 +68,14 @@ export async function completeTripAction(
   formData: FormData,
 ): Promise<ActionState> {
   try {
-    await assertRole(["DRIVER"]);
+    const { companyId } = await assertRole(["DRIVER"]);
     const parsed = completeTripSchema.safeParse({
       actualDistanceKm: formData.get("actualDistanceKm"),
       fuelConsumedL: formData.get("fuelConsumedL"),
       fuelCost: formData.get("fuelCost"),
     });
     if (!parsed.success) return fail("Please fix the highlighted fields.", fieldErrors(parsed.error.issues));
-    await completeTrip(id, parsed.data);
+    await completeTrip(companyId, id, parsed.data);
     revalidatePath("/trips");
     return OK;
   } catch (e) {

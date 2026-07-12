@@ -12,7 +12,7 @@ export async function logFuelAction(
   formData: FormData,
 ): Promise<ActionState> {
   try {
-    await assertRole(["FINANCIAL_ANALYST"]);
+    const { companyId } = await assertRole(["FINANCIAL_ANALYST"]);
     const parsed = fuelSchema.safeParse({
       vehicleId: formData.get("vehicleId"),
       liters: formData.get("liters"),
@@ -23,7 +23,7 @@ export async function logFuelAction(
       for (const i of parsed.error.issues) fe[String(i.path[0])] = i.message;
       return fail("Please fix the highlighted fields.", fe);
     }
-    await logFuel(parsed.data);
+    await logFuel(companyId, parsed.data);
     revalidatePath("/expenses");
     return OK;
   } catch (e) {
@@ -36,7 +36,7 @@ export async function addExpenseAction(
   formData: FormData,
 ): Promise<ActionState> {
   try {
-    await assertRole(["FINANCIAL_ANALYST"]);
+    const { companyId } = await assertRole(["FINANCIAL_ANALYST"]);
     const parsed = expenseSchema.safeParse({
       vehicleId: formData.get("vehicleId"),
       category: formData.get("category"),
@@ -48,7 +48,7 @@ export async function addExpenseAction(
       for (const i of parsed.error.issues) fe[String(i.path[0])] = i.message;
       return fail("Please fix the highlighted fields.", fe);
     }
-    await addExpense(parsed.data);
+    await addExpense(companyId, parsed.data);
     revalidatePath("/expenses");
     return OK;
   } catch (e) {

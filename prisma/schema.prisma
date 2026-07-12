@@ -18,6 +18,7 @@ datasource db {
 // ─────────────────────────────
 
 enum Role {
+  ADMIN
   FLEET_MANAGER
   DRIVER
   SAFETY_OFFICER
@@ -57,21 +58,47 @@ enum ExpenseCategory {
 }
 
 // ─────────────────────────────
+// COMPANY (tenant)
+// ─────────────────────────────
+
+model Company {
+  id        String   @id @default(cuid())
+  name      String
+  domain    String   @unique // e.g. "acme.com" — new users must use this email domain
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  users           User[]
+  vehicles        Vehicle[]
+  drivers         Driver[]
+  trips           Trip[]
+  maintenanceLogs MaintenanceLog[]
+  fuelLogs        FuelLog[]
+  expenses        Expense[]
+
+  @@map("companies")
+}
+
+// ─────────────────────────────
 // USERS / AUTH
 // ─────────────────────────────
 
 model User {
   id           String   @id @default(cuid())
+  companyId    String
+  company      Company  @relation(fields: [companyId], references: [id], onDelete: Cascade)
   name         String
-  email        String   @unique
+  email        String   @unique // globally unique — login is by email across all tenants
   passwordHash String
   role         Role
+  isActive     Boolean  @default(true)
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
 
   // if a User account is linked to a driver profile
   driver       Driver?  @relation("UserDriver")
 
+  @@index([companyId])
   @@map("users")
 }
 
@@ -81,7 +108,9 @@ model User {
 
 model Vehicle {
   id                 String        @id @default(cuid())
-  registrationNumber String        @unique
+  companyId          String
+  company            Company       @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  registrationNumber String
   name               String
   type               String
   maxLoadCapacityKg  Decimal       @db.Decimal(10, 2)
@@ -97,6 +126,8 @@ model Vehicle {
   fuelLogs           FuelLog[]
   expenses           Expense[]
 
+  @@unique([companyId, registrationNumber]) // unique within a company
+  @@index([companyId])
   @@index([status])
   @@index([type])
   @@map("vehicles")
@@ -108,10 +139,12 @@ model Vehicle {
 
 model Driver {
   id                String       @id @default(cuid())
+  companyId         String
+  company           Company      @relation(fields: [companyId], references: [id], onDelete: Cascade)
   userId            String?      @unique
   user              User?        @relation("UserDriver", fields: [userId], references: [id])
   name              String
-  licenseNumber     String       @unique
+  licenseNumber     String
   licenseCategory   String
   licenseExpiryDate DateTime
   contactNumber     String
@@ -122,6 +155,8 @@ model Driver {
 
   trips             Trip[]
 
+  @@unique([companyId, licenseNumber]) // unique within a company
+  @@index([companyId])
   @@index([status])
   @@map("drivers")
 }
@@ -131,7 +166,9 @@ model Driver {
 // ─────────────────────────────
 
 model Trip {
-  id               String     @id @default(cuid())
+  id                String     @id @default(cuid())
+  companyId         String
+  company           Company    @relation(fields: [companyId], references: [id], onDelete: Cascade)
   source            String
   destination       String
   vehicleId         String
@@ -151,6 +188,7 @@ model Trip {
 
   fuelLogs          FuelLog[]
 
+  @@index([companyId])
   @@index([status])
   @@index([vehicleId])
   @@index([driverId])
@@ -163,6 +201,8 @@ model Trip {
 
 model MaintenanceLog {
   id          String             @id @default(cuid())
+  companyId   String
+  company     Company            @relation(fields: [companyId], references: [id], onDelete: Cascade)
   vehicleId   String
   vehicle     Vehicle            @relation(fields: [vehicleId], references: [id])
   description String
@@ -173,6 +213,7 @@ model MaintenanceLog {
   createdAt   DateTime           @default(now())
   updatedAt   DateTime           @updatedAt
 
+  @@index([companyId])
   @@index([vehicleId])
   @@index([status])
   @@map("maintenance_logs")
@@ -184,6 +225,8 @@ model MaintenanceLog {
 
 model FuelLog {
   id        String   @id @default(cuid())
+  companyId String
+  company   Company  @relation(fields: [companyId], references: [id], onDelete: Cascade)
   vehicleId String
   vehicle   Vehicle  @relation(fields: [vehicleId], references: [id])
   tripId    String?
@@ -193,6 +236,7 @@ model FuelLog {
   date      DateTime @default(now())
   createdAt DateTime @default(now())
 
+  @@index([companyId])
   @@index([vehicleId])
   @@map("fuel_logs")
 }
@@ -203,6 +247,8 @@ model FuelLog {
 
 model Expense {
   id        String          @id @default(cuid())
+  companyId String
+  company   Company         @relation(fields: [companyId], references: [id], onDelete: Cascade)
   vehicleId String
   vehicle   Vehicle         @relation(fields: [vehicleId], references: [id])
   category  ExpenseCategory
@@ -211,6 +257,7 @@ model Expense {
   notes     String?
   createdAt DateTime        @default(now())
 
+  @@index([companyId])
   @@index([vehicleId])
   @@index([category])
   @@map("expenses")

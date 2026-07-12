@@ -17,7 +17,7 @@ export default async function DashboardPage({
   const { session } = await requireAccess("dashboard", "view");
   const canExportTrips = canAccess(session.role, "trips") !== null;
   const filters = await searchParams;
-  const data = await getDashboardData(filters);
+  const data = await getDashboardData(session.companyId, filters);
   const { kpis, statusCounts, recentTrips, filterOptions } = data;
 
   const statusBars: BarDatum[] = [

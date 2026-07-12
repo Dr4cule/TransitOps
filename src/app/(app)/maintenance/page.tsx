@@ -26,12 +26,12 @@ function MaintPill({ status }: { status: string }) {
 }
 
 export default async function MaintenancePage() {
-  const { access } = await requireAccess("maintenance", "view");
+  const { access, session } = await requireAccess("maintenance", "view");
   const canEdit = access === "crud";
 
   const [vehicles, logs] = await Promise.all([
-    vehiclesForMaintenance(),
-    listMaintenanceLogs(),
+    vehiclesForMaintenance(session.companyId),
+    listMaintenanceLogs(session.companyId),
   ]);
 
   const vehicleOptions = vehicles.map((v) => ({ id: v.id, name: v.name }));

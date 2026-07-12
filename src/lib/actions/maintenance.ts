@@ -11,7 +11,7 @@ export async function openMaintenanceAction(
   formData: FormData,
 ): Promise<ActionState> {
   try {
-    await assertRole(["FLEET_MANAGER"]);
+    const { companyId } = await assertRole(["FLEET_MANAGER"]);
     const parsed = maintenanceSchema.safeParse({
       vehicleId: formData.get("vehicleId"),
       description: formData.get("description"),
@@ -22,7 +22,7 @@ export async function openMaintenanceAction(
       for (const i of parsed.error.issues) fe[String(i.path[0])] = i.message;
       return fail("Please fix the highlighted fields.", fe);
     }
-    await openMaintenance(parsed.data);
+    await openMaintenance(companyId, parsed.data);
     revalidatePath("/maintenance");
     return OK;
   } catch (e) {
@@ -32,8 +32,8 @@ export async function openMaintenanceAction(
 
 export async function closeMaintenanceAction(logId: string): Promise<ActionState> {
   try {
-    await assertRole(["FLEET_MANAGER"]);
-    await closeMaintenance(logId);
+    const { companyId } = await assertRole(["FLEET_MANAGER"]);
+    await closeMaintenance(companyId, logId);
     revalidatePath("/maintenance");
     return OK;
   } catch (e) {

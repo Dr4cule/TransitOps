@@ -9,8 +9,8 @@ import { ExportButton } from "@/components/export-button";
 const POP = ["bg-pop-blue", "bg-brand", "bg-pop-violet", "bg-st-green", "bg-pop-lime", "bg-st-blue"];
 
 export default async function AnalyticsPage() {
-  await requireAccess("analytics", "view");
-  const { kpis, perVehicle } = await getAnalyticsData();
+  const { session } = await requireAccess("analytics", "view");
+  const { kpis, perVehicle } = await getAnalyticsData(session.companyId);
 
   const costliest: BarDatum[] = perVehicle.slice(0, 6).map((v, i) => ({
     label: v.name,

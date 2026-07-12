@@ -1,15 +1,9 @@
 "use client";
 
+import Link from "next/link";
 import { useActionState } from "react";
 import { loginAction, type LoginState } from "@/lib/actions/auth";
 import { BrutalButton } from "@/components/ui/brutal-button";
-
-const ROLE_HINTS = [
-  ["Fleet Manager", "manager@transitops.dev"],
-  ["Driver", "driver@transitops.dev"],
-  ["Safety Officer", "safety@transitops.dev"],
-  ["Financial Analyst", "finance@transitops.dev"],
-];
 
 export default function LoginPage() {
   const [state, formAction, pending] = useActionState<LoginState, FormData>(
@@ -29,14 +23,20 @@ export default function LoginPage() {
           <p className="mt-1 text-ink/70">Smart Transport Operations Platform</p>
 
           <div className="mt-10">
-            <div className="label !text-ink/60">One login, four roles</div>
-            <ul className="mt-3 space-y-2">
-              {ROLE_HINTS.map(([role]) => (
-                <li key={role} className="flex items-center gap-2 text-ink">
-                  <span className="h-2.5 w-2.5 rounded-full border-2 border-ink bg-brand" />
-                  {role}
-                </li>
-              ))}
+            <div className="label !text-ink/60">Built for teams</div>
+            <ul className="mt-3 space-y-2 text-ink">
+              <li className="flex items-center gap-2">
+                <span className="h-2.5 w-2.5 rounded-full border-2 border-ink bg-brand" />
+                One workspace per company
+              </li>
+              <li className="flex items-center gap-2">
+                <span className="h-2.5 w-2.5 rounded-full border-2 border-ink bg-brand" />
+                Admin provisions the team
+              </li>
+              <li className="flex items-center gap-2">
+                <span className="h-2.5 w-2.5 rounded-full border-2 border-ink bg-brand" />
+                Role-based access control
+              </li>
             </ul>
           </div>
         </div>
@@ -59,8 +59,7 @@ export default function LoginPage() {
                 name="email"
                 type="email"
                 autoComplete="email"
-                defaultValue="driver@transitops.dev"
-                placeholder="driver@transitops.dev"
+                placeholder="you@yourcompany.com"
                 className="mt-1.5 w-full border-2 border-ink bg-panel-2 rounded-[4px] px-3 py-2.5 text-fg placeholder:text-fg-dim/60 focus:outline-none focus:border-brand focus:shadow-[inset_3px_3px_0_var(--color-brand)]"
               />
             </div>
@@ -74,7 +73,6 @@ export default function LoginPage() {
                 name="password"
                 type="password"
                 autoComplete="current-password"
-                defaultValue="password123"
                 placeholder="••••••••"
                 className="mt-1.5 w-full border-2 border-ink bg-panel-2 rounded-[4px] px-3 py-2.5 text-fg placeholder:text-fg-dim/60 focus:outline-none focus:border-brand focus:shadow-[inset_3px_3px_0_var(--color-brand)]"
               />
@@ -86,27 +84,17 @@ export default function LoginPage() {
               </div>
             )}
 
-            <BrutalButton
-              type="submit"
-              size="lg"
-              className="w-full"
-              disabled={pending}
-            >
+            <BrutalButton type="submit" size="lg" className="w-full" disabled={pending}>
               {pending ? "Signing in…" : "Sign In"}
             </BrutalButton>
           </form>
 
-          <div className="mt-6 border-t-2 border-panel-3 pt-4">
-            <div className="label">Demo accounts · password: password123</div>
-            <ul className="mt-2 grid grid-cols-1 gap-1 text-sm text-fg-dim">
-              {ROLE_HINTS.map(([role, email]) => (
-                <li key={email} className="flex justify-between gap-4">
-                  <span>{role}</span>
-                  <span className="tnum text-fg">{email}</span>
-                </li>
-              ))}
-            </ul>
-          </div>
+          <p className="mt-6 border-t-2 border-panel-3 pt-4 text-sm text-fg-dim">
+            New here?{" "}
+            <Link href="/signup" className="font-bold text-brand hover:underline">
+              Create a company account →
+            </Link>
+          </p>
         </div>
       </main>
     </div>

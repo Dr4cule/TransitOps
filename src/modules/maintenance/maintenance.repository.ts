@@ -2,16 +2,17 @@ import { prisma } from "@/lib/prisma";
 
 /** Vehicles eligible for a service record: available or already in shop.
  *  A vehicle On Trip must finish first; a retired one is out of service. */
-export function vehiclesForMaintenance() {
+export function vehiclesForMaintenance(companyId: string) {
   return prisma.vehicle.findMany({
-    where: { status: { in: ["AVAILABLE", "IN_SHOP"] } },
+    where: { companyId, status: { in: ["AVAILABLE", "IN_SHOP"] } },
     orderBy: { name: "asc" },
   });
 }
 
 /** All service records, newest first, with the owning vehicle's name. */
-export function listMaintenanceLogs() {
+export function listMaintenanceLogs(companyId: string) {
   return prisma.maintenanceLog.findMany({
+    where: { companyId },
     orderBy: { openedAt: "desc" },
     include: { vehicle: { select: { name: true } } },
   });

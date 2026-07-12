@@ -24,7 +24,7 @@ export async function GET(
     return new Response("Forbidden", { status: 403 });
   }
 
-  const rows = await loadDataset(dataset);
+  const rows = await loadDataset(dataset, session.companyId);
   const csv = Papa.unparse(rows, { header: true });
   const stamp = new Date().toISOString().slice(0, 10);
 

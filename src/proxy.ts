@@ -14,6 +14,7 @@ const PROTECTED = [
   "/maintenance",
   "/expenses",
   "/analytics",
+  "/users",
   "/settings",
 ];
 
@@ -32,8 +33,8 @@ export async function proxy(req: NextRequest) {
   const { pathname } = req.nextUrl;
   const authed = await isAuthed(req);
 
-  // Send logged-in users away from the login page and the root.
-  if (authed && (pathname === "/login" || pathname === "/")) {
+  // Send logged-in users away from the auth pages and the root.
+  if (authed && (pathname === "/login" || pathname === "/signup" || pathname === "/")) {
     return NextResponse.redirect(new URL("/dashboard", req.url));
   }
 

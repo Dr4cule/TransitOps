@@ -13,14 +13,14 @@ import { FuelForm } from "@/components/finance/FuelForm";
 import { ExpenseForm } from "@/components/finance/ExpenseForm";
 
 export default async function ExpensesPage() {
-  const { access } = await requireAccess("expenses", "view");
+  const { access, session } = await requireAccess("expenses", "view");
   const canEdit = access === "crud";
 
   const [vehicles, fuelLogs, expenses, cost] = await Promise.all([
-    listVehiclesLite(),
-    listFuelLogs(),
-    listExpenses(),
-    operationalCost(),
+    listVehiclesLite(session.companyId),
+    listFuelLogs(session.companyId),
+    listExpenses(session.companyId),
+    operationalCost(session.companyId),
   ]);
 
   return (

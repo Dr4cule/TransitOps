@@ -13,6 +13,8 @@ export type SessionPayload = {
   name: string;
   email: string;
   role: Role;
+  companyId: string;
+  companyName: string;
 };
 
 /** Sign a 7-day session JWT. */

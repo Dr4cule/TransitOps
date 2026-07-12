@@ -3,17 +3,17 @@ import { Prisma } from "@/generated/prisma/client";
 import { BusinessRuleError } from "@/core/errors/BusinessRuleError";
 import type { MaintenanceInput } from "./maintenance.schema";
 
-type LockRow = { id: string; status: string };
+type LockRow = { id: string; status: string; companyId: string };
 
 /** Open a service record (Rule 9). A vehicle On Trip cannot be serviced;
  *  a retired vehicle is out of service. Opening flips the vehicle to In Shop.
  *  The vehicle row is locked so it can't be dispatched in the check→write gap. */
-export async function openMaintenance(input: MaintenanceInput) {
+export async function openMaintenance(companyId: string, input: MaintenanceInput) {
   return prisma.$transaction(async (tx) => {
     const [vehicle] = await tx.$queryRaw<LockRow[]>(
-      Prisma.sql`SELECT id, status FROM vehicles WHERE id = ${input.vehicleId} FOR UPDATE`,
+      Prisma.sql`SELECT id, status, "companyId" FROM vehicles WHERE id = ${input.vehicleId} FOR UPDATE`,
     );
-    if (!vehicle) throw new BusinessRuleError("Vehicle not found.");
+    if (!vehicle || vehicle.companyId !== companyId) throw new BusinessRuleError("Vehicle not found.");
     if (vehicle.status === "ON_TRIP") {
       throw new BusinessRuleError(
         "Cannot service a vehicle that is On Trip — complete or cancel its trip first.",
@@ -25,6 +25,7 @@ export async function openMaintenance(input: MaintenanceInput) {
 
     const log = await tx.maintenanceLog.create({
       data: {
+        companyId,
         vehicleId: input.vehicleId,
         description: input.description,
         cost: input.cost,
@@ -41,10 +42,10 @@ export async function openMaintenance(input: MaintenanceInput) {
 
 /** Close a service record (Rule 10). Only the last open record restores the
  *  vehicle to Available; a retired vehicle stays retired. */
-export async function closeMaintenance(logId: string) {
+export async function closeMaintenance(companyId: string, logId: string) {
   return prisma.$transaction(async (tx) => {
     const log = await tx.maintenanceLog.findUnique({ where: { id: logId } });
-    if (!log) throw new BusinessRuleError("Service record not found.");
+    if (!log || log.companyId !== companyId) throw new BusinessRuleError("Service record not found.");
     if (log.status !== "ACTIVE") {
       throw new BusinessRuleError("This service record is already closed.");
     }

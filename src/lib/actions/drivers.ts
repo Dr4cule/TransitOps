@@ -34,12 +34,12 @@ export async function createDriverAction(
   formData: FormData,
 ): Promise<ActionState> {
   try {
-    await assertRole(["FLEET_MANAGER", "SAFETY_OFFICER"]);
+    const { companyId } = await assertRole(["FLEET_MANAGER", "SAFETY_OFFICER"]);
     const parsed = parseDriver(formData);
     if (!parsed.success) {
       return fail("Please fix the highlighted fields.", fieldErrors(parsed.error.issues));
     }
-    await createDriver(parsed.data);
+    await createDriver(companyId, parsed.data);
     revalidatePath("/drivers");
     return OK;
   } catch (e) {
@@ -53,12 +53,12 @@ export async function updateDriverAction(
   formData: FormData,
 ): Promise<ActionState> {
   try {
-    await assertRole(["FLEET_MANAGER", "SAFETY_OFFICER"]);
+    const { companyId } = await assertRole(["FLEET_MANAGER", "SAFETY_OFFICER"]);
     const parsed = parseDriver(formData);
     if (!parsed.success) {
       return fail("Please fix the highlighted fields.", fieldErrors(parsed.error.issues));
     }
-    await updateDriver(id, parsed.data);
+    await updateDriver(companyId, id, parsed.data);
     revalidatePath("/drivers");
     return OK;
   } catch (e) {
@@ -71,8 +71,8 @@ export async function setDriverStatusAction(
   status: string,
 ): Promise<ActionState> {
   try {
-    await assertRole(["FLEET_MANAGER", "SAFETY_OFFICER"]);
-    await setDriverStatus(id, status);
+    const { companyId } = await assertRole(["FLEET_MANAGER", "SAFETY_OFFICER"]);
+    await setDriverStatus(companyId, id, status);
     revalidatePath("/drivers");
     return OK;
   } catch (e) {

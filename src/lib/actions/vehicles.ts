@@ -27,14 +27,14 @@ export async function createVehicleAction(
   formData: FormData,
 ): Promise<ActionState> {
   try {
-    await assertRole(["FLEET_MANAGER"]);
+    const { companyId } = await assertRole(["FLEET_MANAGER"]);
     const parsed = parseVehicle(formData);
     if (!parsed.success) {
       const fe: Record<string, string> = {};
       for (const i of parsed.error.issues) fe[String(i.path[0])] = i.message;
       return fail("Please fix the highlighted fields.", fe);
     }
-    await createVehicle(parsed.data);
+    await createVehicle(companyId, parsed.data);
     revalidatePath("/fleet");
     return OK;
   } catch (e) {
@@ -48,14 +48,14 @@ export async function updateVehicleAction(
   formData: FormData,
 ): Promise<ActionState> {
   try {
-    await assertRole(["FLEET_MANAGER"]);
+    const { companyId } = await assertRole(["FLEET_MANAGER"]);
     const parsed = parseVehicle(formData);
     if (!parsed.success) {
       const fe: Record<string, string> = {};
       for (const i of parsed.error.issues) fe[String(i.path[0])] = i.message;
       return fail("Please fix the highlighted fields.", fe);
     }
-    await updateVehicle(id, parsed.data);
+    await updateVehicle(companyId, id, parsed.data);
     revalidatePath("/fleet");
     return OK;
   } catch (e) {
@@ -65,8 +65,8 @@ export async function updateVehicleAction(
 
 export async function retireVehicleAction(id: string): Promise<ActionState> {
   try {
-    await assertRole(["FLEET_MANAGER"]);
-    await retireVehicle(id);
+    const { companyId } = await assertRole(["FLEET_MANAGER"]);
+    await retireVehicle(companyId, id);
     revalidatePath("/fleet");
     return OK;
   } catch (e) {

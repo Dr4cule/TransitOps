@@ -5,19 +5,22 @@ import { startOfToday } from "@/lib/utils";
 import type { CreateTripInput, CompleteTripInput } from "./trip.schema";
 
 type LockRow = { id: string; status: string };
+type TripLockRow = { id: string; status: string; companyId: string };
 
 /**
  * Create a trip as DRAFT. Re-validates eligibility server-side (the client
  * pickers are only a hint) and enforces cargo ≤ capacity (Rule 5).
  * No status side-effects yet — a DRAFT holds no locks.
  */
-export async function createTrip(input: CreateTripInput) {
+export async function createTrip(companyId: string, input: CreateTripInput) {
   const [vehicle, driver] = await Promise.all([
     prisma.vehicle.findUnique({ where: { id: input.vehicleId } }),
     prisma.driver.findUnique({ where: { id: input.driverId } }),
   ]);
-  if (!vehicle) throw new BusinessRuleError("Selected vehicle no longer exists.");
-  if (!driver) throw new BusinessRuleError("Selected driver no longer exists.");
+  if (!vehicle || vehicle.companyId !== companyId)
+    throw new BusinessRuleError("Selected vehicle no longer exists.");
+  if (!driver || driver.companyId !== companyId)
+    throw new BusinessRuleError("Selected driver no longer exists.");
 
   // Rule 2 & 4 — vehicle must be dispatchable.
   if (vehicle.status !== "AVAILABLE") {
@@ -40,6 +43,7 @@ export async function createTrip(input: CreateTripInput) {
 
   return prisma.trip.create({
     data: {
+      companyId,
       source: input.source,
       destination: input.destination,
       vehicleId: input.vehicleId,
@@ -56,10 +60,10 @@ export async function createTrip(input: CreateTripInput) {
  * vehicle → ON_TRIP, driver → ON_TRIP. Row-locks the three rows and
  * re-validates against live state so two dispatchers can't race.
  */
-export async function dispatchTrip(tripId: string) {
+export async function dispatchTrip(companyId: string, tripId: string) {
   return prisma.$transaction(async (tx) => {
     const trip = await tx.trip.findUnique({ where: { id: tripId } });
-    if (!trip) throw new BusinessRuleError("Trip not found.");
+    if (!trip || trip.companyId !== companyId) throw new BusinessRuleError("Trip not found.");
     if (trip.status !== "DRAFT") {
       throw new BusinessRuleError(`Only draft trips can be dispatched (this one is ${trip.status}).`);
     }
@@ -93,14 +97,14 @@ export async function dispatchTrip(tripId: string) {
  * FuelLog, rolls the vehicle odometer forward, and restores vehicle + driver to
  * AVAILABLE — all atomically.
  */
-export async function completeTrip(tripId: string, input: CompleteTripInput) {
+export async function completeTrip(companyId: string, tripId: string, input: CompleteTripInput) {
   return prisma.$transaction(async (tx) => {
     // Lock the trip row so two concurrent completes can't both pass the guard
     // (which would double-write the FuelLog and double-increment the odometer).
-    const [locked] = await tx.$queryRaw<LockRow[]>(
-      Prisma.sql`SELECT id, status FROM trips WHERE id = ${tripId} FOR UPDATE`,
+    const [locked] = await tx.$queryRaw<TripLockRow[]>(
+      Prisma.sql`SELECT id, status, "companyId" FROM trips WHERE id = ${tripId} FOR UPDATE`,
     );
-    if (!locked) throw new BusinessRuleError("Trip not found.");
+    if (!locked || locked.companyId !== companyId) throw new BusinessRuleError("Trip not found.");
     if (locked.status !== "DISPATCHED") {
       throw new BusinessRuleError(`Only dispatched trips can be completed (this one is ${locked.status}).`);
     }
@@ -117,6 +121,7 @@ export async function completeTrip(tripId: string, input: CompleteTripInput) {
     });
     await tx.fuelLog.create({
       data: {
+        companyId,
         vehicleId: trip.vehicleId,
         tripId: trip.id,
         liters: input.fuelConsumedL,
@@ -139,12 +144,12 @@ export async function completeTrip(tripId: string, input: CompleteTripInput) {
  * Cancel a trip (Rule 8). A DISPATCHED trip restores vehicle + driver to
  * AVAILABLE; a DRAFT trip simply flips to CANCELLED (nothing was locked).
  */
-export async function cancelTrip(tripId: string) {
+export async function cancelTrip(companyId: string, tripId: string) {
   return prisma.$transaction(async (tx) => {
-    const [locked] = await tx.$queryRaw<LockRow[]>(
-      Prisma.sql`SELECT id, status FROM trips WHERE id = ${tripId} FOR UPDATE`,
+    const [locked] = await tx.$queryRaw<TripLockRow[]>(
+      Prisma.sql`SELECT id, status, "companyId" FROM trips WHERE id = ${tripId} FOR UPDATE`,
     );
-    if (!locked) throw new BusinessRuleError("Trip not found.");
+    if (!locked || locked.companyId !== companyId) throw new BusinessRuleError("Trip not found.");
     if (locked.status !== "DRAFT" && locked.status !== "DISPATCHED") {
       throw new BusinessRuleError(`A ${locked.status} trip cannot be cancelled.`);
     }

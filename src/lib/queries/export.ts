@@ -30,10 +30,16 @@ const day = (d: Date | null): string | null =>
   d ? d.toISOString().slice(0, 10) : null;
 
 /** Load a dataset as flat rows ready for CSV serialization. */
-export async function loadDataset(dataset: string): Promise<Row[]> {
+export async function loadDataset(
+  dataset: string,
+  companyId: string,
+): Promise<Row[]> {
   switch (dataset) {
     case "vehicles": {
-      const rows = await prisma.vehicle.findMany({ orderBy: { name: "asc" } });
+      const rows = await prisma.vehicle.findMany({
+        where: { companyId },
+        orderBy: { name: "asc" },
+      });
       return rows.map((v) => ({
         registration_number: v.registrationNumber,
         name: v.name,
@@ -46,7 +52,10 @@ export async function loadDataset(dataset: string): Promise<Row[]> {
       }));
     }
     case "drivers": {
-      const rows = await prisma.driver.findMany({ orderBy: { name: "asc" } });
+      const rows = await prisma.driver.findMany({
+        where: { companyId },
+        orderBy: { name: "asc" },
+      });
       return rows.map((d) => ({
         name: d.name,
         license_number: d.licenseNumber,
@@ -59,6 +68,7 @@ export async function loadDataset(dataset: string): Promise<Row[]> {
     }
     case "trips": {
       const rows = await prisma.trip.findMany({
+        where: { companyId },
         orderBy: { createdAt: "desc" },
         include: {
           vehicle: { select: { name: true } },
@@ -82,6 +92,7 @@ export async function loadDataset(dataset: string): Promise<Row[]> {
     }
     case "fuel": {
       const rows = await prisma.fuelLog.findMany({
+        where: { companyId },
         orderBy: { date: "desc" },
         include: { vehicle: { select: { name: true } } },
       });
@@ -94,6 +105,7 @@ export async function loadDataset(dataset: string): Promise<Row[]> {
     }
     case "expenses": {
       const rows = await prisma.expense.findMany({
+        where: { companyId },
         orderBy: { date: "desc" },
         include: { vehicle: { select: { name: true } } },
       });
@@ -109,12 +121,23 @@ export async function loadDataset(dataset: string): Promise<Row[]> {
       // Canonical per-vehicle operational cost = fuel + maintenance + TOLL/OTHER
       // expenses. (MAINTENANCE-category expenses are display-only, never summed.)
       const [vehicles, fuel, maint, expenses] = await Promise.all([
-        prisma.vehicle.findMany({ orderBy: { name: "asc" } }),
-        prisma.fuelLog.groupBy({ by: ["vehicleId"], _sum: { cost: true } }),
-        prisma.maintenanceLog.groupBy({ by: ["vehicleId"], _sum: { cost: true } }),
+        prisma.vehicle.findMany({
+          where: { companyId },
+          orderBy: { name: "asc" },
+        }),
+        prisma.fuelLog.groupBy({
+          by: ["vehicleId"],
+          where: { companyId },
+          _sum: { cost: true },
+        }),
+        prisma.maintenanceLog.groupBy({
+          by: ["vehicleId"],
+          where: { companyId },
+          _sum: { cost: true },
+        }),
         prisma.expense.groupBy({
           by: ["vehicleId"],
-          where: { category: { in: ["TOLL", "OTHER"] } },
+          where: { companyId, category: { in: ["TOLL", "OTHER"] } },
           _sum: { amount: true },
         }),
       ]);

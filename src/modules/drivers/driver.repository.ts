@@ -6,8 +6,8 @@ export type DriverFilters = {
   search?: string;
 };
 
-export function listDrivers(f: DriverFilters = {}) {
-  const where: Record<string, unknown> = {};
+export function listDrivers(companyId: string, f: DriverFilters = {}) {
+  const where: Record<string, unknown> = { companyId };
   if (f.status && f.status !== "all") where.status = f.status as DriverStatus;
   if (f.search) {
     where.OR = [
@@ -22,6 +22,6 @@ export function listDrivers(f: DriverFilters = {}) {
   });
 }
 
-export function findByLicense(licenseNumber: string) {
-  return prisma.driver.findUnique({ where: { licenseNumber } });
+export function findByLicense(companyId: string, licenseNumber: string) {
+  return prisma.driver.findFirst({ where: { companyId, licenseNumber } });
 }

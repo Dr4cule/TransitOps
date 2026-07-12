@@ -15,12 +15,12 @@ export default async function FleetPage({
 }: {
   searchParams: Promise<{ type?: string; status?: string; q?: string }>;
 }) {
-  const { access } = await requireAccess("fleet", "view");
+  const { access, session } = await requireAccess("fleet", "view");
   const canEdit = access === "crud";
   const sp = await searchParams;
   const [vehicles, regions] = await Promise.all([
-    listVehicles({ type: sp.type, status: sp.status, search: sp.q }),
-    vehicleRegions(),
+    listVehicles(session.companyId, { type: sp.type, status: sp.status, search: sp.q }),
+    vehicleRegions(session.companyId),
   ]);
   void regions;
 

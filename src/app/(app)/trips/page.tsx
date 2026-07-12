@@ -9,13 +9,13 @@ import { LiveBoard, type BoardTrip } from "@/components/trips/LiveBoard";
 import { LifecycleStepper } from "@/components/trips/LifecycleStepper";
 
 export default async function TripsPage() {
-  const { access } = await requireAccess("trips", "view");
+  const { access, session } = await requireAccess("trips", "view");
   const canManage = access === "crud"; // DRIVER
 
   const [vehicles, drivers, trips] = await Promise.all([
-    canManage ? dispatchableVehicles() : Promise.resolve([]),
-    canManage ? dispatchableDrivers() : Promise.resolve([]),
-    listTrips(),
+    canManage ? dispatchableVehicles(session.companyId) : Promise.resolve([]),
+    canManage ? dispatchableDrivers(session.companyId) : Promise.resolve([]),
+    listTrips(session.companyId),
   ]);
 
   const board: BoardTrip[] = trips.map((t) => ({

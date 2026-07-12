@@ -4,7 +4,7 @@ import { prisma } from "@/lib/prisma";
 const dec = (v: { toNumber: () => number } | null | undefined): number =>
   v == null ? 0 : v.toNumber();
 
-export async function getAnalyticsData() {
+export async function getAnalyticsData(companyId: string) {
   const [
     vehicles,
     fuelByVehicle,
@@ -17,26 +17,26 @@ export async function getAnalyticsData() {
     onTrip,
     nonRetired,
   ] = await Promise.all([
-    prisma.vehicle.findMany({ orderBy: { name: "asc" } }),
-    prisma.fuelLog.groupBy({ by: ["vehicleId"], _sum: { cost: true } }),
-    prisma.maintenanceLog.groupBy({ by: ["vehicleId"], _sum: { cost: true } }),
+    prisma.vehicle.findMany({ where: { companyId }, orderBy: { name: "asc" } }),
+    prisma.fuelLog.groupBy({ by: ["vehicleId"], where: { companyId }, _sum: { cost: true } }),
+    prisma.maintenanceLog.groupBy({ by: ["vehicleId"], where: { companyId }, _sum: { cost: true } }),
     prisma.expense.groupBy({
       by: ["vehicleId"],
-      where: { category: { in: ["TOLL", "OTHER"] } },
+      where: { companyId, category: { in: ["TOLL", "OTHER"] } },
       _sum: { amount: true },
     }),
-    prisma.fuelLog.aggregate({ _sum: { cost: true } }),
-    prisma.maintenanceLog.aggregate({ _sum: { cost: true } }),
+    prisma.fuelLog.aggregate({ where: { companyId }, _sum: { cost: true } }),
+    prisma.maintenanceLog.aggregate({ where: { companyId }, _sum: { cost: true } }),
     prisma.expense.aggregate({
-      where: { category: { in: ["TOLL", "OTHER"] } },
+      where: { companyId, category: { in: ["TOLL", "OTHER"] } },
       _sum: { amount: true },
     }),
     prisma.trip.findMany({
-      where: { status: "COMPLETED" },
+      where: { companyId, status: "COMPLETED" },
       select: { actualDistanceKm: true, fuelConsumedL: true },
     }),
-    prisma.vehicle.count({ where: { status: "ON_TRIP" } }),
-    prisma.vehicle.count({ where: { status: { not: "RETIRED" } } }),
+    prisma.vehicle.count({ where: { companyId, status: "ON_TRIP" } }),
+    prisma.vehicle.count({ where: { companyId, status: { not: "RETIRED" } } }),
   ]);
 
   const fuelBy = new Map(fuelByVehicle.map((r) => [r.vehicleId, dec(r._sum.cost)]));

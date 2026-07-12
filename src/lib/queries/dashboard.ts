@@ -17,8 +17,8 @@ function vehicleWhere(f: DashboardFilters) {
   return where;
 }
 
-export async function getDashboardData(f: DashboardFilters) {
-  const where = vehicleWhere(f);
+export async function getDashboardData(companyId: string, f: DashboardFilters) {
+  const where = { companyId, ...vehicleWhere(f) };
 
   const [
     vehicleGroups,
@@ -37,10 +37,11 @@ export async function getDashboardData(f: DashboardFilters) {
     prisma.vehicle.count({ where: { ...where, status: { not: "RETIRED" } } }),
     prisma.vehicle.count({ where: { ...where, status: "AVAILABLE" } }),
     prisma.vehicle.count({ where: { ...where, status: "IN_SHOP" } }),
-    prisma.trip.count({ where: { status: "DISPATCHED" } }),
-    prisma.trip.count({ where: { status: "DRAFT" } }),
-    prisma.driver.count({ where: { status: "ON_TRIP" } }),
+    prisma.trip.count({ where: { companyId, status: "DISPATCHED" } }),
+    prisma.trip.count({ where: { companyId, status: "DRAFT" } }),
+    prisma.driver.count({ where: { companyId, status: "ON_TRIP" } }),
     prisma.trip.findMany({
+      where: { companyId },
       orderBy: { createdAt: "desc" },
       take: 6,
       include: {
@@ -49,11 +50,15 @@ export async function getDashboardData(f: DashboardFilters) {
       },
     }),
     // filter option sources (unfiltered)
-    prisma.vehicle.findMany({ distinct: ["type"], select: { type: true } }),
+    prisma.vehicle.findMany({
+      where: { companyId },
+      distinct: ["type"],
+      select: { type: true },
+    }),
     prisma.vehicle.findMany({
       distinct: ["region"],
       select: { region: true },
-      where: { region: { not: null } },
+      where: { companyId, region: { not: null } },
     }),
   ]);
 

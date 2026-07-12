@@ -24,19 +24,20 @@ function cell(role: Role, domain: keyof typeof RBAC) {
 }
 
 export default async function SettingsPage() {
-  await requireAccess("settings", "view");
+  const { session } = await requireAccess("settings", "view");
+  const isAdmin = session.role === "ADMIN";
 
   return (
     <div className="space-y-6">
-      <h1 className="text-3xl font-bold text-fg">Settings &amp; RBAC</h1>
+      <h1 className="text-3xl font-bold text-fg">Settings{isAdmin ? " & RBAC" : ""}</h1>
 
-      <div className="grid grid-cols-1 gap-6 xl:grid-cols-2">
-        {/* General (display-only — the schema has no settings table) */}
+      <div className={`grid grid-cols-1 gap-6 ${isAdmin ? "xl:grid-cols-2" : ""}`}>
+        {/* General */}
         <BrutalCard className="p-5">
           <div className="label mb-4">General</div>
           <dl className="space-y-3">
             {[
-              ["Depot", "Gandhinagar Depot · GJ"],
+              ["Company", session.companyName],
               ["Currency", "INR (₹)"],
               ["Distance Unit", "Kilometres"],
               ["Theme", null],
@@ -51,7 +52,8 @@ export default async function SettingsPage() {
           </dl>
         </BrutalCard>
 
-        {/* RBAC matrix — mirrors the enforcement in middleware + server actions */}
+        {/* RBAC matrix — visible to the admin only, to guide role assignment */}
+        {isAdmin && (
         <BrutalCard className="p-5">
           <div className="label mb-4">Role-Based Access (RBAC)</div>
           <div className="overflow-x-auto">
@@ -87,6 +89,7 @@ export default async function SettingsPage() {
             the same gating enforced in the route guard and every server action.
           </p>
         </BrutalCard>
+        )}
       </div>
     </div>
   );

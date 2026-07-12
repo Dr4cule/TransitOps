@@ -23,10 +23,10 @@ export default async function DriversPage({
 }: {
   searchParams: Promise<{ status?: string; q?: string }>;
 }) {
-  const { access } = await requireAccess("drivers", "view");
+  const { access, session } = await requireAccess("drivers", "view");
   const canEdit = access === "crud";
   const sp = await searchParams;
-  const drivers = await listDrivers({ status: sp.status, search: sp.q });
+  const drivers = await listDrivers(session.companyId, { status: sp.status, search: sp.q });
 
   const today = new Date();
   today.setHours(0, 0, 0, 0);

@@ -27,15 +27,25 @@ export const TRIP_STATUS_STYLE: Record<string, PillStyle> = {
 
 /* ── Roles ───────────────────────────────────────────────────── */
 export const ROLE_LABEL: Record<Role, string> = {
+  ADMIN: "Admin",
   FLEET_MANAGER: "Fleet Manager",
   DRIVER: "Driver",
   SAFETY_OFFICER: "Safety Officer",
   FINANCIAL_ANALYST: "Financial Analyst",
 };
 
+/** The operational roles an admin can assign to a teammate (ADMIN excluded). */
+export const ASSIGNABLE_ROLES: Role[] = [
+  "FLEET_MANAGER",
+  "DRIVER",
+  "SAFETY_OFFICER",
+  "FINANCIAL_ANALYST",
+];
+
 /* ── RBAC matrix (domain → allowed roles) ────────────────────────
    'crud' = full access, 'view' = read-only. Missing = no access.
-   Mirrors plan.md § RBAC Matrix (canonical).                       */
+   Mirrors plan.md § RBAC Matrix (canonical). ADMIN owns tenant
+   administration (users + settings) but not day-to-day operations. */
 export type Access = "crud" | "view";
 export type Domain =
   | "dashboard"
@@ -45,17 +55,19 @@ export type Domain =
   | "maintenance"
   | "expenses"
   | "analytics"
+  | "users"
   | "settings";
 
 export const RBAC: Record<Domain, Partial<Record<Role, Access>>> = {
-  dashboard: { FLEET_MANAGER: "view", DRIVER: "view", SAFETY_OFFICER: "view", FINANCIAL_ANALYST: "view" },
+  dashboard: { ADMIN: "view", FLEET_MANAGER: "view", DRIVER: "view", SAFETY_OFFICER: "view", FINANCIAL_ANALYST: "view" },
   fleet: { FLEET_MANAGER: "crud", DRIVER: "view", FINANCIAL_ANALYST: "view" },
   drivers: { FLEET_MANAGER: "crud", SAFETY_OFFICER: "crud" },
   trips: { FLEET_MANAGER: "view", DRIVER: "crud", SAFETY_OFFICER: "view" },
   maintenance: { FLEET_MANAGER: "crud" },
   expenses: { FINANCIAL_ANALYST: "crud" },
   analytics: { FLEET_MANAGER: "view", FINANCIAL_ANALYST: "crud" },
-  settings: { FLEET_MANAGER: "crud", DRIVER: "view", SAFETY_OFFICER: "view", FINANCIAL_ANALYST: "view" },
+  users: { ADMIN: "crud" },
+  settings: { ADMIN: "crud", FLEET_MANAGER: "view", DRIVER: "view", SAFETY_OFFICER: "view", FINANCIAL_ANALYST: "view" },
 };
 
 export function canAccess(role: Role, domain: Domain): Access | null {
@@ -73,5 +85,6 @@ export const NAV_ITEMS: NavItem[] = [
   { href: "/maintenance", label: "Maintenance", domain: "maintenance", icon: "wrench" },
   { href: "/expenses", label: "Fuel & Expenses", domain: "expenses", icon: "fuel" },
   { href: "/analytics", label: "Analytics", domain: "analytics", icon: "chart" },
+  { href: "/users", label: "Team", domain: "users", icon: "users" },
   { href: "/settings", label: "Settings", domain: "settings", icon: "gear" },
 ];
