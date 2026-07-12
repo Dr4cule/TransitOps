@@ -9,9 +9,10 @@ export async function getAnalyticsData() {
     vehicles,
     fuelByVehicle,
     maintByVehicle,
-    revByVehicle,
+    expByVehicle,
     fuelTotal,
     maintTotal,
+    expTotal,
     completedTrips,
     onTrip,
     nonRetired,
@@ -19,16 +20,20 @@ export async function getAnalyticsData() {
     prisma.vehicle.findMany({ orderBy: { name: "asc" } }),
     prisma.fuelLog.groupBy({ by: ["vehicleId"], _sum: { cost: true } }),
     prisma.maintenanceLog.groupBy({ by: ["vehicleId"], _sum: { cost: true } }),
-    prisma.trip.groupBy({
+    prisma.expense.groupBy({
       by: ["vehicleId"],
-      where: { status: "COMPLETED" },
-      _sum: { revenue: true },
+      where: { category: { in: ["TOLL", "OTHER"] } },
+      _sum: { amount: true },
     }),
     prisma.fuelLog.aggregate({ _sum: { cost: true } }),
     prisma.maintenanceLog.aggregate({ _sum: { cost: true } }),
+    prisma.expense.aggregate({
+      where: { category: { in: ["TOLL", "OTHER"] } },
+      _sum: { amount: true },
+    }),
     prisma.trip.findMany({
       where: { status: "COMPLETED" },
-      select: { actualDistanceKm: true, fuelConsumedL: true, revenue: true, completedAt: true },
+      select: { actualDistanceKm: true, fuelConsumedL: true },
     }),
     prisma.vehicle.count({ where: { status: "ON_TRIP" } }),
     prisma.vehicle.count({ where: { status: { not: "RETIRED" } } }),
@@ -36,46 +41,29 @@ export async function getAnalyticsData() {
 
   const fuelBy = new Map(fuelByVehicle.map((r) => [r.vehicleId, dec(r._sum.cost)]));
   const maintBy = new Map(maintByVehicle.map((r) => [r.vehicleId, dec(r._sum.cost)]));
-  const revBy = new Map(revByVehicle.map((r) => [r.vehicleId, dec(r._sum.revenue)]));
+  const expBy = new Map(expByVehicle.map((r) => [r.vehicleId, dec(r._sum.amount)]));
 
-  // Per-vehicle operational cost + ROI
+  // Per-vehicle operational cost = fuel + maintenance + TOLL/OTHER expenses.
   const perVehicle = vehicles
     .map((v) => {
       const fuel = fuelBy.get(v.id) ?? 0;
       const maint = maintBy.get(v.id) ?? 0;
-      const rev = revBy.get(v.id) ?? 0;
-      const acq = dec(v.acquisitionCost);
-      const opCost = fuel + maint;
-      const roiPct = acq > 0 ? Math.round(((rev - opCost) / acq) * 1000) / 10 : 0;
-      return { name: v.name, fuel, maint, opCost, revenue: rev, roiPct };
+      const exp = expBy.get(v.id) ?? 0;
+      return { name: v.name, fuel, maint, exp, opCost: fuel + maint + exp };
     })
     .filter((v) => v.opCost > 0)
     .sort((a, b) => b.opCost - a.opCost);
 
   // Fleet-wide KPIs
-  const operationalCost = dec(fuelTotal._sum.cost) + dec(maintTotal._sum.cost);
+  const operationalCost =
+    dec(fuelTotal._sum.cost) + dec(maintTotal._sum.cost) + dec(expTotal._sum.amount);
   const totalDistance = completedTrips.reduce((s, t) => s + dec(t.actualDistanceKm), 0);
   const totalFuel = completedTrips.reduce((s, t) => s + dec(t.fuelConsumedL), 0);
   const fuelEfficiency = totalFuel > 0 ? Math.round((totalDistance / totalFuel) * 10) / 10 : 0;
   const fleetUtilization = nonRetired > 0 ? Math.round((onTrip / nonRetired) * 100) : 0;
 
-  const totalRevenue = perVehicle.reduce((s, v) => s + v.revenue, 0);
-  const totalAcq = vehicles.reduce((s, v) => s + dec(v.acquisitionCost), 0);
-  const roiPct =
-    totalAcq > 0 ? Math.round(((totalRevenue - operationalCost) / totalAcq) * 1000) / 10 : 0;
-
-  // Monthly revenue (by completedAt)
-  const monthMap = new Map<string, number>();
-  for (const t of completedTrips) {
-    if (!t.completedAt) continue;
-    const key = t.completedAt.toLocaleString("en-US", { month: "short", year: "2-digit" });
-    monthMap.set(key, (monthMap.get(key) ?? 0) + dec(t.revenue));
-  }
-  const monthlyRevenue = Array.from(monthMap, ([label, value]) => ({ label, value }));
-
   return {
-    kpis: { fuelEfficiency, fleetUtilization, operationalCost, roiPct },
+    kpis: { fuelEfficiency, fleetUtilization, operationalCost },
     perVehicle,
-    monthlyRevenue,
   };
 }

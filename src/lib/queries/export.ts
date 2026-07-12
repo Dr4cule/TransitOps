@@ -66,7 +66,7 @@ export async function loadDataset(dataset: string): Promise<Row[]> {
         },
       });
       return rows.map((t) => ({
-        trip_code: t.tripCode,
+        trip_code: "TR-" + t.id.slice(-5).toUpperCase(),
         source: t.source,
         destination: t.destination,
         vehicle: t.vehicle.name,
@@ -75,7 +75,6 @@ export async function loadDataset(dataset: string): Promise<Row[]> {
         planned_distance_km: dec(t.plannedDistanceKm),
         actual_distance_km: dec(t.actualDistanceKm),
         fuel_consumed_l: dec(t.fuelConsumedL),
-        revenue: dec(t.revenue),
         status: t.status,
         dispatched_at: day(t.dispatchedAt),
         completed_at: day(t.completedAt),
@@ -107,35 +106,32 @@ export async function loadDataset(dataset: string): Promise<Row[]> {
       }));
     }
     case "analytics": {
-      // per-vehicle operational cost = fuel + maintenance, + revenue & ROI
-      const [vehicles, fuel, maint, revenue] = await Promise.all([
+      // Canonical per-vehicle operational cost = fuel + maintenance + TOLL/OTHER
+      // expenses. (MAINTENANCE-category expenses are display-only, never summed.)
+      const [vehicles, fuel, maint, expenses] = await Promise.all([
         prisma.vehicle.findMany({ orderBy: { name: "asc" } }),
         prisma.fuelLog.groupBy({ by: ["vehicleId"], _sum: { cost: true } }),
         prisma.maintenanceLog.groupBy({ by: ["vehicleId"], _sum: { cost: true } }),
-        prisma.trip.groupBy({
+        prisma.expense.groupBy({
           by: ["vehicleId"],
-          where: { status: "COMPLETED" },
-          _sum: { revenue: true },
+          where: { category: { in: ["TOLL", "OTHER"] } },
+          _sum: { amount: true },
         }),
       ]);
       const fuelBy = new Map(fuel.map((r) => [r.vehicleId, dec(r._sum.cost) ?? 0]));
       const maintBy = new Map(maint.map((r) => [r.vehicleId, dec(r._sum.cost) ?? 0]));
-      const revBy = new Map(revenue.map((r) => [r.vehicleId, dec(r._sum.revenue) ?? 0]));
+      const expBy = new Map(expenses.map((r) => [r.vehicleId, dec(r._sum.amount) ?? 0]));
       return vehicles.map((v) => {
         const f = fuelBy.get(v.id) ?? 0;
         const m = maintBy.get(v.id) ?? 0;
-        const rev = revBy.get(v.id) ?? 0;
-        const acq = dec(v.acquisitionCost) ?? 0;
-        const opCost = f + m;
-        const roiPct = acq > 0 ? Math.round(((rev - opCost) / acq) * 1000) / 10 : null;
+        const e = expBy.get(v.id) ?? 0;
         return {
           vehicle: v.name,
           registration_number: v.registrationNumber,
           fuel_cost: f,
           maintenance_cost: m,
-          operational_cost: opCost,
-          revenue: rev,
-          roi_pct: roiPct,
+          toll_other_cost: e,
+          operational_cost: f + m + e,
         };
       });
     }

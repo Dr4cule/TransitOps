@@ -83,7 +83,7 @@ export default async function DashboardPage({
                     <StatusPill kind="trip" status={t.status} />
                   </Td>
                   <Td align="right" className="text-fg-dim">
-                    {etaLabel(t.status, t.etaMinutes)}
+                    {etaLabel(t.status)}
                   </Td>
                 </Tr>
               ))

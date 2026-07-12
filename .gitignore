@@ -45,8 +45,7 @@ next-env.d.ts
 src/generated/
 
 # AI / agent tooling — kept local, never pushed
-AGENTS.md
-CLAUDE.md
+# (AGENTS.md + CLAUDE.md are tracked: they carry the Next.js-16 "read the docs" mandate)
 GEMINI.md
 .claude/
 .superpowers/

@@ -83,11 +83,11 @@ export async function getDashboardData(f: DashboardFilters) {
     statusCounts,
     recentTrips: recentTrips.map((t) => ({
       id: t.id,
-      tripCode: t.tripCode,
+      // No stored trip code in the canonical schema — derive a stable display code.
+      tripCode: "TR-" + t.id.slice(-5).toUpperCase(),
       vehicle: t.vehicle.name,
       driver: t.driver.name,
       status: t.status,
-      etaMinutes: t.etaMinutes,
     })),
     filterOptions: {
       types: types.map((t) => t.type).sort(),
@@ -99,9 +99,9 @@ export async function getDashboardData(f: DashboardFilters) {
   };
 }
 
-/** Human ETA string mirroring the wireframe. */
-export function etaLabel(status: string, etaMinutes: number | null): string {
-  if (status === "DISPATCHED") return etaMinutes ? `${etaMinutes} min` : "En route";
+/** Human ETA string mirroring the wireframe (derived from status). */
+export function etaLabel(status: string): string {
+  if (status === "DISPATCHED") return "En route";
   if (status === "COMPLETED") return "Delivered";
   if (status === "DRAFT") return "Awaiting dispatch";
   if (status === "CANCELLED") return "—";

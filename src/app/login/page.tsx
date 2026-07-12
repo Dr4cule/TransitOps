@@ -6,7 +6,7 @@ import { BrutalButton } from "@/components/ui/brutal-button";
 
 const ROLE_HINTS = [
   ["Fleet Manager", "manager@transitops.dev"],
-  ["Dispatcher", "raven@transitops.dev"],
+  ["Driver", "driver@transitops.dev"],
   ["Safety Officer", "safety@transitops.dev"],
   ["Financial Analyst", "finance@transitops.dev"],
 ];
@@ -59,8 +59,8 @@ export default function LoginPage() {
                 name="email"
                 type="email"
                 autoComplete="email"
-                defaultValue="raven@transitops.dev"
-                placeholder="raven@transitops.dev"
+                defaultValue="driver@transitops.dev"
+                placeholder="driver@transitops.dev"
                 className="mt-1.5 w-full border-2 border-ink bg-panel-2 rounded-[4px] px-3 py-2.5 text-fg placeholder:text-fg-dim/60 focus:outline-none focus:border-brand focus:shadow-[inset_3px_3px_0_var(--color-brand)]"
               />
             </div>

@@ -28,13 +28,14 @@ export const TRIP_STATUS_STYLE: Record<string, PillStyle> = {
 /* ── Roles ───────────────────────────────────────────────────── */
 export const ROLE_LABEL: Record<Role, string> = {
   FLEET_MANAGER: "Fleet Manager",
-  DISPATCHER: "Dispatcher",
+  DRIVER: "Driver",
   SAFETY_OFFICER: "Safety Officer",
   FINANCIAL_ANALYST: "Financial Analyst",
 };
 
 /* ── RBAC matrix (domain → allowed roles) ────────────────────────
-   'crud' = full access, 'view' = read-only. Missing = no access.   */
+   'crud' = full access, 'view' = read-only. Missing = no access.
+   Mirrors plan.md § RBAC Matrix (canonical).                       */
 export type Access = "crud" | "view";
 export type Domain =
   | "dashboard"
@@ -47,14 +48,14 @@ export type Domain =
   | "settings";
 
 export const RBAC: Record<Domain, Partial<Record<Role, Access>>> = {
-  dashboard: { FLEET_MANAGER: "view", DISPATCHER: "view", SAFETY_OFFICER: "view", FINANCIAL_ANALYST: "view" },
-  fleet: { FLEET_MANAGER: "crud", DISPATCHER: "view", FINANCIAL_ANALYST: "view" },
+  dashboard: { FLEET_MANAGER: "view", DRIVER: "view", SAFETY_OFFICER: "view", FINANCIAL_ANALYST: "view" },
+  fleet: { FLEET_MANAGER: "crud", DRIVER: "view", FINANCIAL_ANALYST: "view" },
   drivers: { FLEET_MANAGER: "crud", SAFETY_OFFICER: "crud" },
-  trips: { DISPATCHER: "crud", SAFETY_OFFICER: "view" },
+  trips: { FLEET_MANAGER: "view", DRIVER: "crud", SAFETY_OFFICER: "view" },
   maintenance: { FLEET_MANAGER: "crud" },
   expenses: { FINANCIAL_ANALYST: "crud" },
   analytics: { FLEET_MANAGER: "view", FINANCIAL_ANALYST: "crud" },
-  settings: { FLEET_MANAGER: "crud", DISPATCHER: "view", SAFETY_OFFICER: "view", FINANCIAL_ANALYST: "view" },
+  settings: { FLEET_MANAGER: "crud", DRIVER: "view", SAFETY_OFFICER: "view", FINANCIAL_ANALYST: "view" },
 };
 
 export function canAccess(role: Role, domain: Domain): Access | null {

@@ -19,7 +19,7 @@ datasource db {
 
 enum Role {
   FLEET_MANAGER
-  DISPATCHER
+  DRIVER
   SAFETY_OFFICER
   FINANCIAL_ANALYST
 }
@@ -131,8 +131,7 @@ model Driver {
 // ─────────────────────────────
 
 model Trip {
-  id                String     @id @default(cuid())
-  tripCode          String     @unique
+  id               String     @id @default(cuid())
   source            String
   destination       String
   vehicleId         String
@@ -143,9 +142,7 @@ model Trip {
   plannedDistanceKm Decimal    @db.Decimal(10, 2)
   actualDistanceKm  Decimal?   @db.Decimal(10, 2)
   fuelConsumedL     Decimal?   @db.Decimal(10, 2)
-  revenue           Decimal?   @db.Decimal(12, 2)
   status            TripStatus @default(DRAFT)
-  etaMinutes        Int?
   dispatchedAt      DateTime?
   completedAt       DateTime?
   cancelledAt       DateTime?

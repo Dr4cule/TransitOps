@@ -1,14 +1,10 @@
 import { PrismaPg } from "@prisma/adapter-pg";
 import { PrismaClient } from "../src/generated/prisma/client";
-<<<<<<< HEAD
 import bcrypt from "bcryptjs";
-=======
->>>>>>> deadindian/main
 
 const adapter = new PrismaPg({ connectionString: process.env.DATABASE_URL });
 const prisma = new PrismaClient({ adapter });
 
-<<<<<<< HEAD
 const PASSWORD = "password123";
 
 function daysFromNow(days: number): Date {
@@ -21,10 +17,10 @@ async function main() {
   console.log("🌱 Seeding TransitOps…");
   const passwordHash = await bcrypt.hash(PASSWORD, 10);
 
-  // ── Users (one per role; Raven K. = Dispatcher, matches the top-bar chip) ──
+  // ── Users (one per role; the DRIVER login is the trip-operations role) ──
   const users = [
     { name: "Fleet Manager", email: "manager@transitops.dev", role: "FLEET_MANAGER" as const },
-    { name: "Raven K.", email: "raven@transitops.dev", role: "DISPATCHER" as const },
+    { name: "Raven K.", email: "driver@transitops.dev", role: "DRIVER" as const },
     { name: "Safety Officer", email: "safety@transitops.dev", role: "SAFETY_OFFICER" as const },
     { name: "Financial Analyst", email: "finance@transitops.dev", role: "FINANCIAL_ANALYST" as const },
   ];
@@ -76,63 +72,49 @@ async function main() {
   }
   console.log(`  ✓ ${drivers.length} drivers`);
 
-  // ── Trips (spanning the lifecycle so the board + recent-trips table fill) ──
+  // ── Trips (span the lifecycle so the board + recent-trips table fill).
+  //    Reset first so re-seeds stay clean (trips have no natural unique key). ──
+  await prisma.fuelLog.deleteMany();
+  await prisma.trip.deleteMany();
   const trips = [
     {
-      tripCode: "TR001", source: "Gandhinagar Depot", destination: "Ahmedabad Hub",
+      source: "Gandhinagar Depot", destination: "Ahmedabad Hub",
       vehicleName: "TRUCK-11", driverName: "Priya", cargoWeightKg: 3200, plannedDistanceKm: 38,
-      status: "DISPATCHED" as const, etaMinutes: 45, dispatchedAt: new Date(),
-      actualDistanceKm: null as number | null, fuelConsumedL: null as number | null, revenue: null as number | null,
+      status: "DISPATCHED" as const, dispatchedAt: new Date(),
+      actualDistanceKm: null as number | null, fuelConsumedL: null as number | null,
     },
     {
-      tripCode: "TR002", source: "Ahmedabad Hub", destination: "Vadodara Yard",
+      source: "Ahmedabad Hub", destination: "Vadodara Yard",
       vehicleName: "VAN-05", driverName: "Alex", cargoWeightKg: 450, plannedDistanceKm: 110,
-      status: "COMPLETED" as const, etaMinutes: null, dispatchedAt: daysFromNow(-3), completedAt: daysFromNow(-3),
-      actualDistanceKm: 112, fuelConsumedL: 13.4, revenue: 18500,
+      status: "COMPLETED" as const, dispatchedAt: daysFromNow(-3), completedAt: daysFromNow(-3),
+      actualDistanceKm: 112, fuelConsumedL: 13.4,
     },
     {
-      tripCode: "TR004", source: "Vatva Industrial Area", destination: "Sanand Warehouse",
+      source: "Vatva Industrial Area", destination: "Sanand Warehouse",
       vehicleName: "TRUCK-04", driverName: "Suresh", cargoWeightKg: 5200, plannedDistanceKm: 52,
-      status: "DRAFT" as const, etaMinutes: null, dispatchedAt: null,
-      actualDistanceKm: null, fuelConsumedL: null, revenue: null,
+      status: "DRAFT" as const, dispatchedAt: null,
+      actualDistanceKm: null, fuelConsumedL: null,
     },
     {
-      tripCode: "TR006", source: "Mansa", destination: "Kalol Depot",
+      source: "Mansa", destination: "Kalol Depot",
       vehicleName: "MINI-03", driverName: "Meera", cargoWeightKg: 800, plannedDistanceKm: 27,
-      status: "CANCELLED" as const, etaMinutes: null, dispatchedAt: daysFromNow(-1), cancelledAt: daysFromNow(-1),
-      actualDistanceKm: null, fuelConsumedL: null, revenue: null,
-    },
-    // Older completed trips so Monthly Revenue shows a real trend.
-    {
-      tripCode: "TR000", source: "Kadi", destination: "Ahmedabad Hub",
-      vehicleName: "VAN-05", driverName: "Alex", cargoWeightKg: 480, plannedDistanceKm: 96,
-      status: "COMPLETED" as const, etaMinutes: null, dispatchedAt: daysFromNow(-38), completedAt: daysFromNow(-38),
-      actualDistanceKm: 98, fuelConsumedL: 11.9, revenue: 16200,
-    },
-    {
-      tripCode: "TR003", source: "Sanand Warehouse", destination: "Rajkot Depot",
-      vehicleName: "TRUCK-04", driverName: "Suresh", cargoWeightKg: 6100, plannedDistanceKm: 214,
-      status: "COMPLETED" as const, etaMinutes: null, dispatchedAt: daysFromNow(-68), completedAt: daysFromNow(-68),
-      actualDistanceKm: 221, fuelConsumedL: 41.5, revenue: 47800,
+      status: "CANCELLED" as const, dispatchedAt: daysFromNow(-1), cancelledAt: daysFromNow(-1),
+      actualDistanceKm: null, fuelConsumedL: null,
     },
   ];
   for (const t of trips) {
     const { vehicleName, driverName, ...rest } = t;
-    const data = {
-      ...rest,
-      vehicleId: vehicleByName[vehicleName],
-      driverId: driverByName[driverName],
-    };
-    await prisma.trip.upsert({
-      where: { tripCode: t.tripCode },
-      update: data,
-      create: data,
+    await prisma.trip.create({
+      data: {
+        ...rest,
+        vehicleId: vehicleByName[vehicleName],
+        driverId: driverByName[driverName],
+      },
     });
   }
   console.log(`  ✓ ${trips.length} trips`);
 
-  // ── Fuel logs (reset then insert so re-seeds stay clean) ──
-  await prisma.fuelLog.deleteMany();
+  // ── Fuel logs ──
   await prisma.fuelLog.createMany({
     data: [
       { vehicleId: vehicleByName["VAN-05"], liters: 42, cost: 3150, date: daysFromNow(-7) },
@@ -153,7 +135,7 @@ async function main() {
     ],
   });
 
-  // ── Expenses (tolls / other) ──
+  // ── Expenses (TOLL / OTHER count toward operational cost; MAINTENANCE is display-only) ──
   await prisma.expense.deleteMany();
   await prisma.expense.createMany({
     data: [
@@ -174,16 +156,4 @@ main()
   })
   .finally(async () => {
     await prisma.$disconnect();
-=======
-async function main() {
-  // TODO: seed data
-}
-
-main()
-  .then(() => prisma.$disconnect())
-  .catch(async (e) => {
-    console.error(e);
-    await prisma.$disconnect();
-    process.exit(1);
->>>>>>> deadindian/main
   });
