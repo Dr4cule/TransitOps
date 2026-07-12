@@ -1,10 +1,14 @@
 import { PrismaPg } from "@prisma/adapter-pg";
 import { PrismaClient } from "../src/generated/prisma/client";
+<<<<<<< HEAD
 import bcrypt from "bcryptjs";
+=======
+>>>>>>> deadindian/main
 
 const adapter = new PrismaPg({ connectionString: process.env.DATABASE_URL });
 const prisma = new PrismaClient({ adapter });
 
+<<<<<<< HEAD
 const PASSWORD = "password123";
 
 function daysFromNow(days: number): Date {
@@ -170,4 +174,16 @@ main()
   })
   .finally(async () => {
     await prisma.$disconnect();
+=======
+async function main() {
+  // TODO: seed data
+}
+
+main()
+  .then(() => prisma.$disconnect())
+  .catch(async (e) => {
+    console.error(e);
+    await prisma.$disconnect();
+    process.exit(1);
+>>>>>>> deadindian/main
   });

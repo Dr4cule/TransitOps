@@ -7,10 +7,21 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
+<<<<<<< HEAD
     "db:migrate": "prisma migrate dev",
     "db:generate": "prisma generate",
     "db:seed": "tsx --env-file=.env prisma/seed.ts",
     "db:reset": "prisma migrate reset --force"
+=======
+    "typecheck": "tsc --noEmit",
+    "db:migrate": "prisma migrate dev",
+    "db:seed": "prisma db seed",
+    "db:studio": "prisma studio",
+    "db:reset": "prisma migrate reset"
+  },
+  "prisma": {
+    "seed": "tsx prisma/seed.ts"
+>>>>>>> deadindian/main
   },
   "dependencies": {
     "@prisma/adapter-pg": "^7.8.0",
@@ -34,11 +45,16 @@
     "@types/pg": "^8.20.0",
     "@types/react": "^19",
     "@types/react-dom": "^19",
+    "dotenv": "^17.0.0",
     "eslint": "^9",
     "eslint-config-next": "16.2.10",
     "puppeteer-core": "^25.3.0",
     "tailwindcss": "^4",
+<<<<<<< HEAD
     "tsx": "^4.23.0",
+=======
+    "tsx": "^4.19.0",
+>>>>>>> deadindian/main
     "typescript": "^5"
   }
 }
