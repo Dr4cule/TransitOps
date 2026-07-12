@@ -58,6 +58,9 @@ function CompleteModal({ id, onDone }: { id: string; onDone: () => void }) {
           <Field label="Fuel Cost (₹)" error={fe.fuelCost}>
             <Input name="fuelCost" type="number" step="0.01" placeholder="1010" />
           </Field>
+          <Field label="Revenue (₹)" error={fe.revenue}>
+            <Input name="revenue" type="number" step="0.01" placeholder="8500" />
+          </Field>
           {!state.ok && state.error && (
             <div className="border-2 border-st-red bg-st-red/15 rounded-[4px] px-3 py-2 text-sm text-st-red">
               ✕ {state.error}

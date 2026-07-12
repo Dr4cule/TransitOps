@@ -8,6 +8,7 @@ import {
   createCompanyUser,
   setUserRole,
   setUserActive,
+  removeCompanyUser,
 } from "@/modules/users/user.service";
 import { ASSIGNABLE_ROLES } from "@/lib/constants";
 import type { Role } from "@/generated/prisma/enums";
@@ -53,6 +54,17 @@ export async function setUserActiveAction(userId: string, isActive: boolean): Pr
   try {
     const { companyId, userId: actingUserId } = await assertRole(["ADMIN"]);
     await setUserActive(companyId, actingUserId, userId, isActive);
+    revalidatePath("/users");
+    return OK;
+  } catch (e) {
+    return toActionState(e);
+  }
+}
+
+export async function removeUserAction(userId: string): Promise<ActionState> {
+  try {
+    const { companyId, userId: actingUserId } = await assertRole(["ADMIN"]);
+    await removeCompanyUser(companyId, actingUserId, userId);
     revalidatePath("/users");
     return OK;
   } catch (e) {

@@ -3,6 +3,7 @@
 import { logoutAction } from "@/lib/actions/auth";
 import { ROLE_LABEL, type NavItem } from "@/lib/constants";
 import { MobileNav } from "@/components/shell/mobile-nav";
+import { SearchBar } from "@/components/shell/search-bar";
 import type { Role } from "@/generated/prisma/enums";
 
 export function Topbar({
@@ -25,11 +26,7 @@ export function Topbar({
     <header className="flex h-14 shrink-0 items-center gap-3 border-b-[3px] border-ink bg-panel px-4">
       <MobileNav items={navItems} />
       <div className="flex-1">
-        <input
-          type="search"
-          placeholder="Search…"
-          className="w-full max-w-sm border-2 border-ink bg-panel-2 rounded-[4px] px-3 py-1.5 text-sm text-fg placeholder:text-fg-dim/60 focus:outline-none focus:border-brand focus:shadow-[inset_2px_2px_0_var(--color-brand)]"
-        />
+        <SearchBar />
       </div>
       <div className="flex items-center gap-3">
         <div className="hidden sm:block text-right">

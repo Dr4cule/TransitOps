@@ -1,4 +1,16 @@
 services:
+  app:
+    build: .
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      DATABASE_URL: postgresql://postgres:postgres@db:5432/transitops
+      AUTH_SECRET: ${AUTH_SECRET:-dev_insecure_fallback_secret_change_me}
+      SEED_DB: ${SEED_DB:-false}
+    ports:
+      - "3000:3000"
+
   db:
     image: postgres:16
     environment:

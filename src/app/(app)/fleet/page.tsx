@@ -7,6 +7,7 @@ import { StatusPill } from "@/components/ui/status-pill";
 import { BrutalCard } from "@/components/ui/brutal-card";
 import { ListFilters } from "@/components/ui/list-filters";
 import { ExportButton } from "@/components/export-button";
+import { ImportModal } from "@/components/import-modal";
 import { VehicleFormModal, type VehicleRow } from "@/components/vehicles/VehicleForm";
 import { RetireButton } from "@/components/vehicles/RetireButton";
 
@@ -30,6 +31,7 @@ export default async function FleetPage({
         <h1 className="text-3xl font-bold text-fg">Vehicle Registry</h1>
         <div className="flex items-center gap-3">
           <ExportButton dataset="vehicles" label="Export CSV" />
+          {canEdit && <ImportModal dataset="vehicles" />}
           {canEdit && <VehicleFormModal />}
         </div>
       </div>

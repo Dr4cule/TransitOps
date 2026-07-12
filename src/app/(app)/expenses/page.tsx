@@ -9,6 +9,7 @@ import { inr, num } from "@/lib/utils";
 import { BrutalTable, Tr, Td } from "@/components/ui/brutal-table";
 import { BrutalCard } from "@/components/ui/brutal-card";
 import { ExportButton } from "@/components/export-button";
+import { ImportModal } from "@/components/import-modal";
 import { FuelForm } from "@/components/finance/FuelForm";
 import { ExpenseForm } from "@/components/finance/ExpenseForm";
 
@@ -31,6 +32,8 @@ export default async function ExpensesPage() {
           <div className="flex items-center gap-3">
             <ExportButton dataset="fuel" label="Export Fuel CSV" />
             <ExportButton dataset="expenses" label="Export Expenses CSV" />
+            <ImportModal dataset="fuel" />
+            <ImportModal dataset="expenses" />
             <FuelForm vehicles={vehicles} />
             <ExpenseForm vehicles={vehicles} />
           </div>

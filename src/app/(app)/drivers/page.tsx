@@ -7,6 +7,7 @@ import { StatusPill } from "@/components/ui/status-pill";
 import { BrutalCard } from "@/components/ui/brutal-card";
 import { ListFilters } from "@/components/ui/list-filters";
 import { ExportButton } from "@/components/export-button";
+import { ImportModal } from "@/components/import-modal";
 import { DriverFormModal, type DriverRow } from "@/components/drivers/DriverForm";
 import { DriverStatusToggle } from "@/components/drivers/DriverStatusToggle";
 
@@ -37,6 +38,7 @@ export default async function DriversPage({
         <h1 className="text-3xl font-bold text-fg">Drivers &amp; Safety</h1>
         <div className="flex items-center gap-3">
           <ExportButton dataset="drivers" label="Export CSV" />
+          {canEdit && <ImportModal dataset="drivers" />}
           {canEdit && <DriverFormModal />}
         </div>
       </div>

@@ -86,7 +86,7 @@ async function seedCompany(spec: Spec, passwordHash: string) {
   // ── Trips (span the lifecycle) ──
   const trips = [
     { source: "Depot", destination: "Hub", vehicleName: "TRUCK-11", driverName: "Priya", cargoWeightKg: 3200, plannedDistanceKm: 38, status: "DISPATCHED" as const, dispatchedAt: new Date(), actualDistanceKm: null as number | null, fuelConsumedL: null as number | null },
-    { source: "Hub", destination: "Yard", vehicleName: "VAN-05", driverName: "Alex", cargoWeightKg: 450, plannedDistanceKm: 110, status: "COMPLETED" as const, dispatchedAt: daysFromNow(-3), completedAt: daysFromNow(-3), actualDistanceKm: 112, fuelConsumedL: 13.4 },
+    { source: "Hub", destination: "Yard", vehicleName: "VAN-05", driverName: "Alex", cargoWeightKg: 450, plannedDistanceKm: 110, status: "COMPLETED" as const, dispatchedAt: daysFromNow(-3), completedAt: daysFromNow(-3), actualDistanceKm: 112, fuelConsumedL: 13.4, revenue: 68000 },
     { source: "Vatva", destination: "Sanand", vehicleName: "TRUCK-04", driverName: "Suresh", cargoWeightKg: 5200, plannedDistanceKm: 52, status: "DRAFT" as const, dispatchedAt: null, actualDistanceKm: null, fuelConsumedL: null },
     { source: "Mansa", destination: "Kalol", vehicleName: "MINI-03", driverName: "Meera", cargoWeightKg: 800, plannedDistanceKm: 27, status: "CANCELLED" as const, dispatchedAt: daysFromNow(-1), cancelledAt: daysFromNow(-1), actualDistanceKm: null, fuelConsumedL: null },
   ];

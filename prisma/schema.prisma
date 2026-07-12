@@ -179,6 +179,7 @@ model Trip {
   plannedDistanceKm Decimal    @db.Decimal(10, 2)
   actualDistanceKm  Decimal?   @db.Decimal(10, 2)
   fuelConsumedL     Decimal?   @db.Decimal(10, 2)
+  revenue           Decimal?   @db.Decimal(12, 2)
   status            TripStatus @default(DRAFT)
   dispatchedAt      DateTime?
   completedAt       DateTime?

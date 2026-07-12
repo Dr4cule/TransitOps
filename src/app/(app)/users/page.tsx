@@ -4,7 +4,7 @@ import { ROLE_LABEL } from "@/lib/constants";
 import { BrutalTable, Tr, Td } from "@/components/ui/brutal-table";
 import { BrutalCard } from "@/components/ui/brutal-card";
 import { UserFormModal } from "@/components/users/UserForm";
-import { RoleSelect, ActiveToggle } from "@/components/users/UserRowControls";
+import { RoleSelect, ActiveToggle, RemoveButton } from "@/components/users/UserRowControls";
 
 export default async function UsersPage() {
   const { session } = await requireAccess("users", "crud"); // ADMIN only
@@ -77,7 +77,10 @@ export default async function UsersPage() {
                 {isAdmin ? (
                   <span className="text-fg-dim text-sm">—</span>
                 ) : (
-                  <ActiveToggle userId={u.id} isActive={u.isActive} />
+                  <span className="inline-flex items-center justify-end gap-2">
+                    <ActiveToggle userId={u.id} isActive={u.isActive} />
+                    <RemoveButton userId={u.id} name={u.name} />
+                  </span>
                 )}
               </Td>
             </Tr>

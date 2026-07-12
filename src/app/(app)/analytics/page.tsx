@@ -29,10 +29,23 @@ export default async function AnalyticsPage() {
         <KpiCard caption="Fuel Efficiency" value={kpis.fuelEfficiency} unit="km/l" accent="blue" />
         <KpiCard caption="Fleet Utilization" value={kpis.fleetUtilization} unit="%" accent="green" />
         <KpiCard caption="Operational Cost" value={inr(kpis.operationalCost)} accent="orange" />
+        <KpiCard caption="Revenue" value={inr(kpis.totalRevenue)} accent="violet" />
+        <KpiCard
+          caption="Net Profit"
+          value={inr(kpis.netProfit)}
+          accent={kpis.netProfit >= 0 ? "green" : "redpink"}
+        />
+        <KpiCard
+          caption="Return on Investment"
+          value={kpis.roi}
+          unit="%"
+          accent={kpis.roi >= 0 ? "green" : "redpink"}
+        />
       </div>
 
       <p className="label">
-        Operational Cost = Σ Fuel + Σ Maintenance + Σ Expenses (Toll / Other)
+        Operational Cost = Σ Fuel + Σ Maintenance + Σ Expenses (Toll / Other) · ROI = (Revenue −
+        Operational Cost) ÷ Operational Cost
       </p>
 
       <div className="space-y-3">

@@ -85,6 +85,7 @@ export async function loadDataset(
         planned_distance_km: dec(t.plannedDistanceKm),
         actual_distance_km: dec(t.actualDistanceKm),
         fuel_consumed_l: dec(t.fuelConsumedL),
+        revenue: dec(t.revenue),
         status: t.status,
         dispatched_at: day(t.dispatchedAt),
         completed_at: day(t.completedAt),
@@ -120,7 +121,7 @@ export async function loadDataset(
     case "analytics": {
       // Canonical per-vehicle operational cost = fuel + maintenance + TOLL/OTHER
       // expenses. (MAINTENANCE-category expenses are display-only, never summed.)
-      const [vehicles, fuel, maint, expenses] = await Promise.all([
+      const [vehicles, fuel, maint, expenses, revenue] = await Promise.all([
         prisma.vehicle.findMany({
           where: { companyId },
           orderBy: { name: "asc" },
@@ -140,21 +141,32 @@ export async function loadDataset(
           where: { companyId, category: { in: ["TOLL", "OTHER"] } },
           _sum: { amount: true },
         }),
+        prisma.trip.groupBy({
+          by: ["vehicleId"],
+          where: { companyId, status: "COMPLETED" },
+          _sum: { revenue: true },
+        }),
       ]);
       const fuelBy = new Map(fuel.map((r) => [r.vehicleId, dec(r._sum.cost) ?? 0]));
       const maintBy = new Map(maint.map((r) => [r.vehicleId, dec(r._sum.cost) ?? 0]));
       const expBy = new Map(expenses.map((r) => [r.vehicleId, dec(r._sum.amount) ?? 0]));
+      const revBy = new Map(revenue.map((r) => [r.vehicleId, dec(r._sum.revenue) ?? 0]));
       return vehicles.map((v) => {
         const f = fuelBy.get(v.id) ?? 0;
         const m = maintBy.get(v.id) ?? 0;
         const e = expBy.get(v.id) ?? 0;
+        const rev = revBy.get(v.id) ?? 0;
+        const opCost = f + m + e;
         return {
           vehicle: v.name,
           registration_number: v.registrationNumber,
           fuel_cost: f,
           maintenance_cost: m,
           toll_other_cost: e,
-          operational_cost: f + m + e,
+          operational_cost: opCost,
+          revenue: rev,
+          net_profit: rev - opCost,
+          roi_percent: opCost > 0 ? Math.round(((rev - opCost) / opCost) * 1000) / 10 : null,
         };
       });
     }

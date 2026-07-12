@@ -51,3 +51,17 @@ export async function setUserActive(
   if (user.role === "ADMIN") throw new BusinessRuleError("The admin account cannot be deactivated.");
   return prisma.user.update({ where: { id: userId }, data: { isActive } });
 }
+
+/** Remove a teammate from the company. Cannot remove yourself or the admin.
+ *  Any linked driver profile is detached (userId set to null), not deleted. */
+export async function removeCompanyUser(
+  companyId: string,
+  actingUserId: string,
+  userId: string,
+) {
+  const user = await prisma.user.findFirst({ where: { id: userId, companyId } });
+  if (!user) throw new BusinessRuleError("User not found.");
+  if (user.id === actingUserId) throw new BusinessRuleError("You cannot remove your own account.");
+  if (user.role === "ADMIN") throw new BusinessRuleError("The admin account cannot be removed.");
+  return prisma.user.delete({ where: { id: userId } });
+}

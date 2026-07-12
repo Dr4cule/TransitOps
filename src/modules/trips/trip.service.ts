@@ -117,6 +117,7 @@ export async function completeTrip(companyId: string, tripId: string, input: Com
         completedAt: new Date(),
         actualDistanceKm: input.actualDistanceKm,
         fuelConsumedL: input.fuelConsumedL,
+        revenue: input.revenue,
       },
     });
     await tx.fuelLog.create({

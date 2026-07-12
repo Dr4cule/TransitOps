@@ -25,6 +25,9 @@ export const completeTripSchema = z.object({
   fuelCost: z.coerce
     .number({ message: "Fuel cost must be a number" })
     .min(0, "Fuel cost cannot be negative"),
+  revenue: z.coerce
+    .number({ message: "Revenue must be a number" })
+    .min(0, "Revenue cannot be negative"),
 });
 
 export type CompleteTripInput = z.infer<typeof completeTripSchema>;
