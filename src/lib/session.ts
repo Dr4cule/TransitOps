@@ -8,6 +8,11 @@ const secret = new TextEncoder().encode(
   process.env.AUTH_SECRET ?? "dev_insecure_fallback_secret_change_me",
 );
 
+function useSecureCookies(): boolean {
+  if (process.env.AUTH_TRUST_HOST === "true") return false;
+  return process.env.NODE_ENV === "production";
+}
+
 export type SessionPayload = {
   userId: string;
   name: string;
@@ -51,7 +56,7 @@ export async function setSessionCookie(token: string): Promise<void> {
     httpOnly: true,
     sameSite: "lax",
     path: "/",
-    secure: process.env.NODE_ENV === "production",
+    secure: useSecureCookies(),
     maxAge: 60 * 60 * 24 * 7,
   });
 }

@@ -7,6 +7,7 @@ services:
     environment:
       DATABASE_URL: postgresql://postgres:postgres@db:5432/transitops
       AUTH_SECRET: ${AUTH_SECRET:-dev_insecure_fallback_secret_change_me}
+      AUTH_TRUST_HOST: ${AUTH_TRUST_HOST:-true}
       SEED_DB: ${SEED_DB:-false}
     ports:
       - "3000:3000"
